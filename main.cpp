@@ -7,15 +7,15 @@
 
 bool asd = true;
 // ROBOT ARM CONTROLS
-GLfloat BaseTransX=-0.5;
-GLfloat BaseTransZ=0;
-GLfloat BaseSpin=0;        
-GLfloat ShoulderAng=-10;  
-GLfloat ElbowAng=-120;   
-GLfloat WristAng=90;
-GLfloat WristRot=10;
-GLfloat FingerAng1=45;
-GLfloat FingerAng2=-45;
+GLfloat baseTransX = -0.5;
+GLfloat baseTransZ = 0.0;
+GLfloat baseSpin = 0.0;        
+GLfloat shoulderAng = -10.0;  
+GLfloat elbowAng = -120.0;   
+GLfloat wristAng = 90.0;
+GLfloat wristRot = 10.0;
+GLfloat fingerAng1 = 45.0;
+GLfloat fingerAng2 = -45.0;
 
 // ROBOT COLORS
 GLubyte Arms[] = { 128,128,128 };
@@ -34,11 +34,12 @@ GLubyte Unk[] = { 0,128,128 };
 GLfloat eye[] = {0.0, 4.0, 4.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
+GLfloat camRot[2] = {0.0, 0.0};
 
 // PHYSICS
-GLfloat* catchPtDir = (float*)malloc(sizeof(GLint)*16);
-GLfloat* catchPtEsq = (float*)malloc(sizeof(GLint)*16);
-GLfloat* catchPtCenter = (float*)malloc(sizeof(GLint)*16);
+GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
+GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
+GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
 
 // LIGHT
 bool light0 = false;
@@ -56,8 +57,10 @@ GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0, 1, 0};
 
-// FLOOR
-float floorSize = 1.0;
+// CLAW AREA
+GLfloat floorSize = 2.0;
+GLfloat gridSize = 0.1;
+GLfloat wallSize = 1.0;
 
 // OBJECT LIST
 Cube** cube;
@@ -142,7 +145,7 @@ void DrawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
 
 void DrawGroundPlane()
 {
-    glColor3f(0.7f,0.7f,0.7f);
+    glColor3f(0.7f,0.9f,0.7f);
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0);
     GLfloat gridSize = 0.1;
@@ -155,6 +158,51 @@ void DrawGroundPlane()
 		}
 	}
     glEnd();
+}
+
+void DrawWalls()
+{
+	glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+		glColor3f(0.0f,0.5f,1.0f);
+		glBegin(GL_QUADS);	
+		for(int k = 0; k < 4; k++){			
+			glNormal3f(0, 1, 0);						
+			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
+				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
+					glVertex3f(i, j+gridSize, floorSize);
+					glVertex3f(i+gridSize, j+gridSize, floorSize);
+					glVertex3f(i+gridSize, j, floorSize);
+					glVertex3f(i, j, floorSize);
+				}
+			}
+			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
+				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
+					glVertex3f(floorSize, j+gridSize, i+gridSize);
+					glVertex3f(floorSize, j+gridSize, i);
+					glVertex3f(floorSize, j, i);
+					glVertex3f(floorSize, j, i+gridSize);
+				}
+			}
+			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
+				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
+					glVertex3f(i+gridSize, j+gridSize, -floorSize);
+					glVertex3f(i, j+gridSize, -floorSize);
+					glVertex3f(i, j, -floorSize);
+					glVertex3f(i+gridSize, j, -floorSize);
+				}
+			}
+			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
+				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
+					glVertex3f(-floorSize, j+gridSize, i);
+					glVertex3f(-floorSize, j+gridSize, i+gridSize);
+					glVertex3f(-floorSize, j, i+gridSize);
+					glVertex3f(-floorSize, j, i);
+				}
+			}			
+		}
+		glEnd();	
+    glPopMatrix();
 }
 
 void DrawJoint(int NumSegs)
@@ -271,23 +319,23 @@ void DrawRobotArm(int NumSegs)
     glPushMatrix();
 		/** Base of Arm **/
 		glTranslatef(0,0,0);
-		glRotatef(BaseSpin,0.0,1.0,0.0);
+		glRotatef(baseSpin,0.0,1.0,0.0);
 		DrawBase(NumSegs);
 
 		/** Arm Segment #1 **/
 		glTranslatef(0,0.4f,0);
-		glRotatef(ShoulderAng,0.0,0.0,1.0);
+		glRotatef(shoulderAng,0.0,0.0,1.0);
 		DrawArmSegment(NumSegs);
 
 		/** Arm Segment #2 **/
 		glTranslatef(0,0.5f,0);
-		glRotatef(ElbowAng,0.0,0.0,1.0);
+		glRotatef(elbowAng,0.0,0.0,1.0);
 		DrawArmSegment(NumSegs);
 
 		/** Wrist **/
 		glTranslatef(0,0.5f,0);
-		glRotatef(WristAng,0.0,0.0,1.0);
-		glRotatef(WristRot,0.0,1.0,0.0);
+		glRotatef(wristAng,0.0,0.0,1.0);
+		glRotatef(wristRot,0.0,1.0,0.0);
 		DrawWrist(NumSegs);
 		glPushMatrix();
 		glTranslatef(0, 0.5f, 0);
@@ -297,7 +345,7 @@ void DrawRobotArm(int NumSegs)
 			
 		/** Fingers **/
 		glTranslatef(0,0.2f,0);    
-		glRotatef(FingerAng1,0.0,0.0,1.0);
+		glRotatef(fingerAng1,0.0,0.0,1.0);
 		DrawFingerBase(NumSegs);
 		  
 		glTranslatef(0, 0.3f, 0);
@@ -307,7 +355,7 @@ void DrawRobotArm(int NumSegs)
 		glRotatef(90, 0, 0, 1);
 		glTranslatef(0, -0.3f, 0);
 		
-		glRotatef(FingerAng2*2,0.0,0.0,1.0);
+		glRotatef(fingerAng2*2,0.0,0.0,1.0);
 		DrawFingerBase(NumSegs);
 		glTranslatef(0, 0.3f, 0);
 		glRotatef(90, 0, 0, 1);
@@ -360,7 +408,7 @@ void drawCatchSphere(){
 	glPopMatrix();
 }
 
-void myDisplay()
+void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -368,24 +416,24 @@ void myDisplay()
     glPushMatrix();
     	glLoadIdentity();
 		glTranslatef(0,0,0);
-		glRotatef(BaseSpin,0.0,1.0,0.0);
+		glRotatef(baseSpin,0.0,1.0,0.0);
 		glTranslatef(0,0.4f,0);
-		glRotatef(ShoulderAng,0.0,0.0,1.0);
+		glRotatef(shoulderAng,0.0,0.0,1.0);
 		glTranslatef(0,0.5f,0);
-		glRotatef(ElbowAng,0.0,0.0,1.0);
+		glRotatef(elbowAng,0.0,0.0,1.0);
 		glTranslatef(0,0.5f,0);
-		glRotatef(WristAng,0.0,0.0,1.0);
-		glRotatef(WristRot,0.0,1.0,0.0);		
+		glRotatef(wristAng,0.0,0.0,1.0);
+		glRotatef(wristRot,0.0,1.0,0.0);		
 		glTranslatef(0,0.2f,0);		
 		glPushMatrix();
-			glRotatef(FingerAng1,0.0,0.0,1.0);
+			glRotatef(fingerAng1,0.0,0.0,1.0);
 			glTranslatef(0, 0.3f, 0);
 			glRotatef(-90, 0, 0, 1);
 			glTranslatef(0, 0.2f, 0);
 			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtDir);
 		glPopMatrix();
 		glPushMatrix();
-			glRotatef(FingerAng2,0.0,0.0,1.0);
+			glRotatef(fingerAng2,0.0,0.0,1.0);
 			glTranslatef(0, 0.3f, 0);
 			glRotatef(90, 0, 0, 1);
 			glTranslatef(0, 0.2f, 0);
@@ -396,7 +444,10 @@ void myDisplay()
     glPushMatrix();
 		glLoadIdentity();
 		gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
+		glRotatef(camRot[1], 1, 0, 0);
+		glRotatef(camRot[0], 0, 1, 0);
 		DrawGroundPlane();
+		DrawWalls();
 		DrawRobotArm(16);
 		drawCubeArray();
 		drawCatchSphere();
@@ -405,7 +456,7 @@ void myDisplay()
     glutSwapBuffers();
 }
 
-void myReshape(int w, int h)
+void reshape(int w, int h)
 {
     glViewport(0,0,w,h);
 
@@ -414,17 +465,12 @@ void myReshape(int w, int h)
     gluPerspective(30,(float)w/h,0.1,10);
 }
 
-void setCubeArray(){
-	
-}
-
-void myIdle(){
+void idle(){
 	lightConfig();
     glutPostRedisplay();
 }
 
-void KeyboardFunc(unsigned char key, int x, int y)
-{
+void keyInput(unsigned char key, int x, int y){
     switch(key){
 	// GET OUT
 	case 27:
@@ -432,54 +478,66 @@ void KeyboardFunc(unsigned char key, int x, int y)
 	    break;
     // BASE
 	case 'a':
-	    BaseSpin += 4;
+	    baseSpin += 4;
 	    break;
 	case 's':
-	    BaseSpin -= 4;
+	    baseSpin -= 4;
 	    break;
 	// SHOULDER
 	case 'r':
-	    ShoulderAng += 4;
+	    shoulderAng += 4;
 	    break;
 	case 'f':
-	    ShoulderAng -= 4;
+	    shoulderAng -= 4;
 	    break;
 	// ELBOW
 	case 't':
-	    ElbowAng += 4;
+	    elbowAng += 4;
 	    break;
 	case 'g':
-	    ElbowAng -= 4;
+	    elbowAng -= 4;
 	    break;
 	// WRIST
 	case 'y':
-	    WristAng += 4;
+	    wristAng += 4;
 	    break;
 	case 'h':
-	    WristAng -= 4;
+	    wristAng -= 4;
 	    break;
 	case 'u':
-	    WristRot += 4;
+	    wristRot += 4;
 	    break;
 	case 'j':
-	    WristRot -= 4;
+	    wristRot -= 4;
 	    break;
 	// FINGERS
 	case 'q':
-	    FingerAng1 += 4;
-	    FingerAng2 -= 4;
+	    fingerAng1 += 4;
+	    fingerAng2 -= 4;
 	    break;
 	case 'w':
-	    FingerAng1 -= 4;
-	    FingerAng2 += 4;
+	    fingerAng1 -= 4;
+	    fingerAng2 += 4;
 	    break;
 	// CAMERA CONTROLS
 	case 'z':
-	    //worldRot += 1;
+	    camRot[0] += 5;
 	    break;
 	case 'x':
-	    //worldRot -= 1;
+	    camRot[0] -= 5;
 	    break;
+	case 'c':
+	    camRot[1] += 5;
+	    break;
+	case 'v':
+	    camRot[1] -= 5;
+	    break;
+	case 'e':
+	    eye[2] += 0.1;
+	    break;
+	case 'd':
+	    eye[2] -= 0.1;
+	    break;	
 	// LIGHTING CONTROLS
 	// LIGHTING SWITCHS
 	case '1':
@@ -538,33 +596,37 @@ void lightConfig(){
     glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 }
 
-int main(int argc, char** argv)
-{
-	srand(time(NULL));
-	
+void createCatchPt(){
 	cube = new Cube*[10];
     for(int i = 0; i < 10; i++){
     	cube[i] = new Cube(0.2);
-    	cube[i]->pos[0] = (GLfloat)(rand()%18)/10.0 - 0.8;
+    	cube[i]->pos[0] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
     	cube[i]->pos[1] = 0.3 + (GLfloat)(rand()%10)/5;
-    	cube[i]->pos[2] = (GLfloat)(rand()%18)/10.0 - 0.8;
+    	cube[i]->pos[2] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
     }
-	
+}
+
+void createCubeArray(){
 	for (int i = 0; i < 16; i++){
     	catchPtDir[i] = 0;
     	catchPtEsq[i] = 0;
     	catchPtCenter[i] = 0;
     }
+}
+
+
+int main(int argc, char** argv)
+{
+	srand(time(NULL));
+	createCubeArray();
+	createCatchPt();
     
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(512,512);
     glutInitWindowPosition(180,100);
-    glutCreateWindow("The Robot Arm");
-	
-	glEnable(GL_LIGHT3);
-	light3 = true;
-	
+    glutCreateWindow("DA CLAW");
+		
     glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
@@ -573,11 +635,11 @@ int main(int argc, char** argv)
     glEnable(GL_LIGHTING);
     glEnable(GL_LINE_SMOOTH);	
     	
-    glutDisplayFunc(myDisplay);
-    glutReshapeFunc(myReshape);
-    glutIdleFunc(myIdle);
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutIdleFunc(idle);
 
-    glutKeyboardFunc(KeyboardFunc);
+    glutKeyboardFunc(keyInput);
        
     glutMainLoop();
 
