@@ -40,21 +40,21 @@ GLfloat* catchPtDir = (float*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (float*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtCenter = (float*)malloc(sizeof(GLint)*16);
 
-
 // LIGHT
 bool light0 = false;
 bool light1 = false;
 bool light2 = false;
 bool light3 = false;
-GLfloat light0Pos[] = {0.0, 2.0, 2.0, 1.0};
-GLfloat light1Pos[] = {0.0, 2.0, 0.0, 0.0};
-GLfloat light2Pos[] = {0.0, 2.0, -2.0, 1.0};
-GLfloat light3Pos[] = {0.0, 0.0, 0.0, 0.0};
+GLfloat light0Pos[] = {2.0, 2.0, 2.0, 1.0};
 GLfloat light0Intensity[] = {1.0, 1.0, 1.0, 1.0};
+GLfloat light1Pos[] = {0.0, 2.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {1.0, 1.0, 1.0, 1.0};
+GLfloat light2Pos[] = {0.0, 2.0, -2.0, 1.0};
 GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
+// Luz 3: Spot, difusa, acoplada à garra
+GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light0Dir[] = {0, -2, -2};
+GLfloat light3Dir[] = {0, 1, 0};
 
 // FLOOR
 float floorSize = 1.0;
@@ -62,10 +62,8 @@ float floorSize = 1.0;
 // OBJECT LIST
 Cube** cube;
 
-// USER INTERFACE GLOBALS
-int LeftButtonDown=0;    // MOUSE STUFF
-int OldX,OldY,NewX,NewY;
-int RobotControl=1;
+// PROTÓTIPOS
+void lightConfig();
 
 void DrawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 {
@@ -84,40 +82,39 @@ void DrawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    glTranslatef(0.5f,0.5f,0.5f);
-    glScalef(0.5f,0.5f,0.5f);
+		glTranslatef(0.5f,0.5f,0.5f);
+		glScalef(0.5f,0.5f,0.5f);
 
-    // TOP
-    glNormal3f(0,1,0);
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(0,1,0);
-    for (i=0; i<NumSegs; i++)
-	glVertex3f(Px[i],1,-Py[i]);
-    glVertex3f(Px[0],1,-Py[0]);
-    glEnd();
+		// TOP
+		glNormal3f(0,1,0);
+		glBegin(GL_TRIANGLE_FAN);
+		glVertex3f(0,1,0);
+		for (i=0; i<NumSegs; i++)
+		glVertex3f(Px[i],1,-Py[i]);
+		glVertex3f(Px[0],1,-Py[0]);
+		glEnd();
 
-    // BOTTOM
-    glNormal3f(0,-1,0);
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex3f(0,-1,0);
-    for (i=0; i<NumSegs; i++)
-	glVertex3f(Px[i],-1,Py[i]);
-    glVertex3f(Px[0],-1,Py[0]);
-    glEnd();
+		// BOTTOM
+		glNormal3f(0,-1,0);
+		glBegin(GL_TRIANGLE_FAN);
+		glVertex3f(0,-1,0);
+		for (i=0; i<NumSegs; i++)
+		glVertex3f(Px[i],-1,Py[i]);
+		glVertex3f(Px[0],-1,Py[0]);
+		glEnd();
 
-    // SIDES
-    glBegin(GL_QUAD_STRIP);
-    for (i=0; i<NumSegs; i++)
-    {
-	glNormal3f(Px[i],0,-Py[i]);
-	glVertex3f(Px[i],1,-Py[i]);
-	glVertex3f(Px[i],-1,-Py[i]);
-    }
-    glNormal3f(Px[0],0,-Py[0]);
-    glVertex3f(Px[0],1,-Py[0]);
-    glVertex3f(Px[0],-1,-Py[0]);
-    glEnd();
-
+		// SIDES
+		glBegin(GL_QUAD_STRIP);
+		for (i=0; i<NumSegs; i++)
+		{
+		glNormal3f(Px[i],0,-Py[i]);
+		glVertex3f(Px[i],1,-Py[i]);
+		glVertex3f(Px[i],-1,-Py[i]);
+		}
+		glNormal3f(Px[0],0,-Py[0]);
+		glVertex3f(Px[0],1,-Py[0]);
+		glVertex3f(Px[0],-1,-Py[0]);
+		glEnd();
     glPopMatrix();
 
     delete[] Px;
@@ -292,7 +289,13 @@ void DrawRobotArm(int NumSegs)
 		glRotatef(WristAng,0.0,0.0,1.0);
 		glRotatef(WristRot,0.0,1.0,0.0);
 		DrawWrist(NumSegs);
+		glPushMatrix();
+		glTranslatef(0, 0.5f, 0);
+		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
+		glPopMatrix();
 		
+			
+		/** Fingers **/
 		glTranslatef(0,0.2f,0);    
 		glRotatef(FingerAng1,0.0,0.0,1.0);
 		DrawFingerBase(NumSegs);
@@ -359,7 +362,7 @@ void drawCatchSphere(){
 
 void myDisplay()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -373,7 +376,7 @@ void myDisplay()
 		glTranslatef(0,0.5f,0);
 		glRotatef(WristAng,0.0,0.0,1.0);
 		glRotatef(WristRot,0.0,1.0,0.0);		
-		glTranslatef(0,0.2f,0);
+		glTranslatef(0,0.2f,0);		
 		glPushMatrix();
 			glRotatef(FingerAng1,0.0,0.0,1.0);
 			glTranslatef(0, 0.3f, 0);
@@ -392,12 +395,12 @@ void myDisplay()
     glPopMatrix();
     glPushMatrix();
 		glLoadIdentity();
-		gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);
+		gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
 		DrawGroundPlane();
 		DrawRobotArm(16);
 		drawCubeArray();
 		drawCatchSphere();
-    glPopMatrix();    
+    glPopMatrix();	
     
     glutSwapBuffers();
 }
@@ -416,16 +419,7 @@ void setCubeArray(){
 }
 
 void myIdle(){
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
-    glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 1.0);
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 100);
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light0Dir);
-    glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
-    glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);
-    glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
-    glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);
-    glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);    
-    
+	lightConfig();
     glutPostRedisplay();
 }
 
@@ -481,18 +475,12 @@ void KeyboardFunc(unsigned char key, int x, int y)
 	    break;
 	// CAMERA CONTROLS
 	case 'z':
-	    worldRot += 1;
+	    //worldRot += 1;
 	    break;
 	case 'x':
-	    worldRot -= 1;
+	    //worldRot -= 1;
 	    break;
-	//LIGHTING CONTROLS
-	case 'e':
-	    light0Dir[1] += 0.01;
-	    break;
-	case 'd':
-	    light0Dir[1] -= 0.01;
-	    break;
+	// LIGHTING CONTROLS
 	// LIGHTING SWITCHS
 	case '1':
 	    if(light0 == true){
@@ -524,7 +512,30 @@ void KeyboardFunc(unsigned char key, int x, int y)
 	    	light2 = true;
 	    }
 	    break;
+	case '4':
+	    if(light3 == true){
+	    	glDisable(GL_LIGHT3);
+	    	light3 = false;
+	    }
+	    else{
+	    	glEnable(GL_LIGHT3);
+	    	light3 = true;
+	    }
+	    break;
     }
+}
+
+void lightConfig(){
+	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
+	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);	
+	glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
+	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
+	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);
+	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 100.0);
+    glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 10.0);
+    glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 }
 
 int main(int argc, char** argv)
@@ -550,15 +561,17 @@ int main(int argc, char** argv)
     glutInitWindowSize(512,512);
     glutInitWindowPosition(180,100);
     glutCreateWindow("The Robot Arm");
-
+	
+	glEnable(GL_LIGHT3);
+	light3 = true;
+	
     glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);	
     	
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
