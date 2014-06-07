@@ -73,6 +73,7 @@ Cube** cubeArray;
 
 // PROTÓTIPOS
 void lightConfig();
+GLuint loadBMP(const char * path);
 
 void DrawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 {
@@ -758,4 +759,57 @@ int main(int argc, char** argv){
     glutMainLoop();
 
     return EXIT_SUCCESS;
+}
+
+/* Ler imagem BMP para aplicar textura. */
+GLuint loadBMP(const char * path) 
+{
+	unsigned char header[54]; // Cada arquivo BMP comeca com um cabecalho desse tamanho.
+	unsigned char dataPos; // Posicao no arquivo que esta sendo lida em determinado momento.
+	unsigned int width, height;
+	unsigned int imageSize; // width*height*3;
+	// RGB Data
+	unsigned char * data;
+
+	// Abrindo o arquivo da imagem
+	FILE *file = fopen(path, "rb");
+	if(!file) {
+		printf("A imagem não pode ser aberta!!\n");
+		return 0;
+	}
+
+	// Lendo cabecalho para comprovar que se trata de um arquivo BMP
+	if( fread(header, 1, 54, file) != 54 ) { // Cabecalho deve conter 54 bytes
+		printf("Nao eh uma imagem BMP!!\n");
+		return 0;
+	}
+
+	// Todo arquivo BMP inicia com a string 'BM'
+	if( header[0]!='B' || header [1]!= 'M' ) {
+		printf("Nao eh uma imagem BMP!!\n");
+		return 0;
+	}
+
+	// Lendo o tamanho da imagem, largura, altura e localizacao dos dados no arquivo
+	dataPos = *(int*)&(header[0x0A]);
+	imageSize = *(int*)&(header[0x22]);
+	width = *(int*)&(header[0x12]);
+	height = *(int*)&(header[0x16]);
+
+	// Caso o cabecalho nao contem imageSize e dataPos...
+	if(imageSize == 0) imageSize=width*height*3;
+	if(dataPos == 0) dataPos = header[54];
+
+	// Alocando memoria para os dados RGB
+	data = new unsigned char [imageSize];
+
+	// Lendo dados do arquivo para o buffer acima
+	fread(data,1,imageSize,file);
+
+	// Fechando arquivo
+	fclose(file);
+
+	// Criando uma textura OpenGL
+	GLuint texture;
+	glGenTextures(1, &texture);
 }
