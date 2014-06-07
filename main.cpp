@@ -58,9 +58,9 @@ GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0, 1, 0};
 
 // CLAW AREA
-GLfloat floorSize = 2.0;
+GLfloat floorSize = 1.0;
 GLfloat gridSize = 0.1;
-GLfloat wallSize = 1.0;
+GLfloat wallSize = 0.5;
 
 // OBJECT LIST
 Cube** cube;
@@ -340,8 +340,7 @@ void DrawRobotArm(int NumSegs)
 		glPushMatrix();
 		glTranslatef(0, 0.5f, 0);
 		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
-		glPopMatrix();
-		
+		glPopMatrix();		
 			
 		/** Fingers **/
 		glTranslatef(0,0.2f,0);    
@@ -368,16 +367,92 @@ void drawCube(Cube* cube){
 	
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    	if(	catchPtCenter[12] > cube->pos[0]-cube->size &&
-    		catchPtCenter[12] < cube->pos[0]+cube->size &&
-    		catchPtCenter[13] > cube->pos[1]-cube->size &&
-    		catchPtCenter[13] < cube->pos[1]+cube->size &&
-    		catchPtCenter[14] > cube->pos[2]-cube->size &&
-    		catchPtCenter[14] < cube->pos[2]+cube->size){
+    	if(
+    	catchPtCenter[12] > cube->pos[0]-cube->size &&
+    	catchPtCenter[12] < cube->pos[0]+cube->size &&
+    	catchPtCenter[13] > cube->pos[1]-cube->size &&
+    	catchPtCenter[13] < cube->pos[1]+cube->size &&
+    	catchPtCenter[14] > cube->pos[2]-cube->size &&
+    	catchPtCenter[14] < cube->pos[2]+cube->size){
     		cube->clr[0] = 0.0;		
     	}
     	else{
     		cube->clr[0] = 1.0;
+    	}
+    	if(
+    	catchPtDir[13] > cube->pos[1]-cube->size &&
+    	catchPtDir[13] < cube->pos[1]+cube->size){
+    		if(
+    		catchPtDir[12] > cube->pos[0]-cube->size &&
+    		catchPtDir[12] < cube->pos[0]+cube->size){    		
+				if(
+				catchPtDir[14] > cube->pos[2]-cube->size-0.2 &&
+				catchPtDir[14] < cube->pos[2]-cube->size+0.2){
+					Cube::updatePos(0, 0, 0.01, floorSize);
+					cube->pos[2] += 0.01;
+				}
+				else if(
+				catchPtDir[14] > cube->pos[2]+cube->size-0.2 &&
+				catchPtDir[14] < cube->pos[2]+cube->size+0.2){
+					cube->pos[2] -= 0.01;
+				}
+			}
+			else if(
+    		catchPtDir[14] > cube->pos[2]-cube->size &&
+    		catchPtDir[14] < cube->pos[2]+cube->size){    		
+				if(
+				catchPtDir[12] > cube->pos[0]-cube->size-0.2 &&
+				catchPtDir[12] < cube->pos[0]-cube->size+0.2){
+					cube->pos[0] += 0.01;
+				}
+				else if(
+				catchPtDir[12] > cube->pos[0]+cube->size-0.2 &&
+				catchPtDir[12] < cube->pos[0]+cube->size+0.2){
+					cube->pos[0] -= 0.01;
+				}
+			}			
+    	}
+    	else{
+    		cube->clr[0] = 1.0;
+    		cube->clr[1] = 1.0;
+    		cube->clr[2] = 1.0;
+    	}
+    	if(
+    	catchPtEsq[13] > cube->pos[1]-cube->size &&
+    	catchPtEsq[13] < cube->pos[1]+cube->size){
+    		if(
+    		catchPtEsq[12] > cube->pos[0]-cube->size &&
+    		catchPtEsq[12] < cube->pos[0]+cube->size){    		
+				if(
+				catchPtEsq[14] > cube->pos[2]-cube->size-0.2 &&
+				catchPtEsq[14] < cube->pos[2]-cube->size+0.2){
+					cube->pos[2] += 0.01;
+				}
+				else if(
+				catchPtEsq[14] > cube->pos[2]+cube->size-0.2 &&
+				catchPtEsq[14] < cube->pos[2]+cube->size+0.2){
+					cube->pos[2] -= 0.01;
+				}
+			}
+			else if(
+    		catchPtEsq[14] > cube->pos[2]-cube->size &&
+    		catchPtEsq[14] < cube->pos[2]+cube->size){    		
+				if(
+				catchPtEsq[12] > cube->pos[0]-cube->size-0.2 &&
+				catchPtEsq[12] < cube->pos[0]-cube->size+0.2){
+					cube->pos[0] += 0.01;
+				}
+				else if(
+				catchPtEsq[12] > cube->pos[0]+cube->size-0.2 &&
+				catchPtEsq[12] < cube->pos[0]+cube->size+0.2){
+					cube->pos[0] -= 0.01;
+				}
+			}			
+    	}   	
+    	else{
+    		cube->clr[0] = 1.0;
+    		cube->clr[1] = 1.0;
+    		cube->clr[2] = 1.0;
     	}
 		glTranslatef(cube->pos[0], cube->pos[1], cube->pos[2]);
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
@@ -615,8 +690,7 @@ void createCubeArray(){
 }
 
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();
 	createCatchPt();
