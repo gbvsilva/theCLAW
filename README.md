@@ -13,5 +13,3 @@ Botões para Instruções Básicas:
 * Rotacionar câmera (mundo inteiro): ZX
 * Subir/Descer câmera: ED
 * Pegar/Soltar objeto: Backspace
-
-
