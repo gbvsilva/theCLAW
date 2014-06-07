@@ -5,7 +5,7 @@
 #include <time.h>
 #include "obj.h"
 
-bool asd = true;
+
 // ROBOT ARM CONTROLS
 GLfloat baseTransX = -0.5;
 GLfloat baseTransZ = 0.0;
@@ -17,29 +17,28 @@ GLfloat wristRot = 10.0;
 GLfloat fingerAng1 = 45.0;
 GLfloat fingerAng2 = -45.0;
 
-// ROBOT COLORS
-GLubyte Arms[] = { 128,128,128 };
-GLubyte Joints[] = { 0,68,119 };
-GLubyte Fingers[] = { 150,0,24 };
-GLubyte FingerJoints[] = { 128,128,128 };
-
-GLubyte teapotColor[] = { 128,128,0 };
-
-GLubyte Red[] = { 128,0,0 };
-GLubyte Green[] = { 0,128,0 };
-GLubyte Yellow[] = { 128,128,0 };
-GLubyte Unk[] = { 0,128,128 };
+// ROBOT COLORSFin
+GLfloat red[] = {1.0, 0, 0};
+GLfloat green[] = {0, 1.0, 0};
+GLfloat blue[] = {0, 0, 1.0};
+GLfloat yellow[] = {1.0, 1.0, 0};
+GLfloat purple[] = {1.0, 0, 1.0};
+GLfloat white[] = {1.0, 1.0, 1.0};
+GLfloat black[] = {0, 0, 0};
 
 // CAMERA CONTROLS
 GLfloat eye[] = {0.0, 4.0, 4.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
-GLfloat camRot[2] = {0.0, 0.0};
+GLfloat camRot[] = {0.0, 0.0};
 
 // PHYSICS
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
+bool turn_on = false;
+bool caught = false;
+bool collision = false;
 
 // LIGHT
 bool light0 = false;
@@ -47,10 +46,10 @@ bool light1 = false;
 bool light2 = false;
 bool light3 = false;
 GLfloat light0Pos[] = {2.0, 2.0, 2.0, 1.0};
-GLfloat light0Intensity[] = {1.0, 1.0, 1.0, 1.0};
+GLfloat light0Intensity[] = {0.3, 0.3, 0.3, 1.0};
 GLfloat light1Pos[] = {0.0, 2.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light2Pos[] = {0.0, 2.0, -2.0, 1.0};
+GLfloat light2Pos[] = {0.0, 1.0, 0.0, 1.0};
 GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
 // Luz 3: Spot, difusa, acoplada à garra
 GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
@@ -63,7 +62,7 @@ GLfloat gridSize = 0.1;
 GLfloat wallSize = 0.5;
 
 // OBJECT LIST
-Cube** cube;
+Cube** cubeArray;
 
 // PROTÓTIPOS
 void lightConfig();
@@ -145,7 +144,10 @@ void DrawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
 
 void DrawGroundPlane()
 {
-    glColor3f(0.7f,0.9f,0.7f);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, blue);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, blue);   
+	glMaterialf(GL_FRONT, GL_SHININESS, 128.0); 
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0);
     GLfloat gridSize = 0.1;
@@ -164,7 +166,10 @@ void DrawWalls()
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-		glColor3f(0.0f,0.5f,1.0f);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, yellow);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, yellow); 
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		glBegin(GL_QUADS);	
 		for(int k = 0; k < 4; k++){			
 			glNormal3f(0, 1, 0);						
@@ -212,7 +217,10 @@ void DrawJoint(int NumSegs)
 		glScalef(0.15f,0.15f,0.12f);
 		glRotatef(90,1,0,0);
 		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glColor3ubv(Joints);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
 }
@@ -224,7 +232,10 @@ void MyDrawJoint(int NumSegs)
 		glScalef(0.15f,0.15f,0.12f);
 		glRotatef(90,1,0,0);
 		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glColor3ubv(Unk);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
 }
@@ -235,18 +246,27 @@ void DrawBase(int NumSegs)
     glPushMatrix();
 		glScalef(0.2f,0.025f,0.2f);
 		glTranslatef(-0.5f,0,-0.5f);
-		glColor3ubv(Green);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
     glPushMatrix();
 		glTranslatef(-0.05f,0,-0.05f);
 		glScalef(0.1f,0.4f,0.1f);
-		glColor3ubv(Yellow);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
 		glPopMatrix();
 		glPushMatrix();
 		glTranslatef(0,0.4f,0);
-		glColor3ubv(Unk);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		MyDrawJoint(NumSegs);
     glPopMatrix();
 }
@@ -257,7 +277,10 @@ void DrawArmSegment(int NumSegs)
     glPushMatrix();
 		glTranslatef(-0.05f,0,-0.05f);
 		glScalef(0.1f,0.5f,0.1f);
-		glColor3ubv(Arms);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
 	glPopMatrix();
 	glPushMatrix();
@@ -272,14 +295,20 @@ void DrawWrist(int NumSegs)
     glPushMatrix();
 		glTranslatef(-0.04f,0,-0.04f);
 		glScalef(0.08f,0.2f,0.08f);
-		glColor3ubv(Fingers);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
     glPushMatrix();
 		glTranslatef(0,0.2f,0);
 		glScalef(0.12f,0.12f,0.12f);
 		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glColor3ubv(FingerJoints);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitSphere(NumSegs);
     glPopMatrix();
 }
@@ -290,14 +319,20 @@ void DrawFingerBase(int NumSegs)
     glPushMatrix();
 		glTranslatef(-0.025f,0,-0.025f);
 		glScalef(0.05f,0.3f,0.05f);
-		glColor3ubv(Fingers);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
     glPushMatrix();
 		glTranslatef(0,0.3f,0);
 		glScalef(0.08f,0.08f,0.08f);
 		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glColor3ubv(FingerJoints);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitSphere(NumSegs);
     glPopMatrix();
 }
@@ -308,7 +343,10 @@ void DrawFingerTip(int NumSegs)
     glPushMatrix();
 		glScalef(0.05f,0.25f,0.05f);
 		glTranslatef(-0.5f,0,-0.5f);
-		glColor3ubv(Fingers);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCone(NumSegs);
     glPopMatrix();
 }
@@ -363,10 +401,10 @@ void DrawRobotArm(int NumSegs)
 }
 
 void drawCube(Cube* cube){
-	if(cube->pos[1] > cube->size/2) cube->pos[1] -= 0.01;
-	
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+    	caught = false;
+    	//Posicionamento
     	if(
     	catchPtCenter[12] > cube->pos[0]-cube->size &&
     	catchPtCenter[12] < cube->pos[0]+cube->size &&
@@ -374,97 +412,54 @@ void drawCube(Cube* cube){
     	catchPtCenter[13] < cube->pos[1]+cube->size &&
     	catchPtCenter[14] > cube->pos[2]-cube->size &&
     	catchPtCenter[14] < cube->pos[2]+cube->size){
-    		cube->clr[0] = 0.0;		
+    		caught = true; 		
     	}
-    	else{
-    		cube->clr[0] = 1.0;
-    	}
-    	if(
-    	catchPtDir[13] > cube->pos[1]-cube->size &&
-    	catchPtDir[13] < cube->pos[1]+cube->size){
-    		if(
-    		catchPtDir[12] > cube->pos[0]-cube->size &&
-    		catchPtDir[12] < cube->pos[0]+cube->size){    		
-				if(
-				catchPtDir[14] > cube->pos[2]-cube->size-0.2 &&
-				catchPtDir[14] < cube->pos[2]-cube->size+0.2){
-					Cube::updatePos(0, 0, 0.01, floorSize);
-					cube->pos[2] += 0.01;
-				}
-				else if(
-				catchPtDir[14] > cube->pos[2]+cube->size-0.2 &&
-				catchPtDir[14] < cube->pos[2]+cube->size+0.2){
-					cube->pos[2] -= 0.01;
-				}
-			}
-			else if(
-    		catchPtDir[14] > cube->pos[2]-cube->size &&
-    		catchPtDir[14] < cube->pos[2]+cube->size){    		
-				if(
-				catchPtDir[12] > cube->pos[0]-cube->size-0.2 &&
-				catchPtDir[12] < cube->pos[0]-cube->size+0.2){
-					cube->pos[0] += 0.01;
-				}
-				else if(
-				catchPtDir[12] > cube->pos[0]+cube->size-0.2 &&
-				catchPtDir[12] < cube->pos[0]+cube->size+0.2){
-					cube->pos[0] -= 0.01;
-				}
-			}			
-    	}
-    	else{
-    		cube->clr[0] = 1.0;
-    		cube->clr[1] = 1.0;
-    		cube->clr[2] = 1.0;
-    	}
-    	if(
-    	catchPtEsq[13] > cube->pos[1]-cube->size &&
-    	catchPtEsq[13] < cube->pos[1]+cube->size){
-    		if(
-    		catchPtEsq[12] > cube->pos[0]-cube->size &&
-    		catchPtEsq[12] < cube->pos[0]+cube->size){    		
-				if(
-				catchPtEsq[14] > cube->pos[2]-cube->size-0.2 &&
-				catchPtEsq[14] < cube->pos[2]-cube->size+0.2){
-					cube->pos[2] += 0.01;
-				}
-				else if(
-				catchPtEsq[14] > cube->pos[2]+cube->size-0.2 &&
-				catchPtEsq[14] < cube->pos[2]+cube->size+0.2){
-					cube->pos[2] -= 0.01;
-				}
-			}
-			else if(
-    		catchPtEsq[14] > cube->pos[2]-cube->size &&
-    		catchPtEsq[14] < cube->pos[2]+cube->size){    		
-				if(
-				catchPtEsq[12] > cube->pos[0]-cube->size-0.2 &&
-				catchPtEsq[12] < cube->pos[0]-cube->size+0.2){
-					cube->pos[0] += 0.01;
-				}
-				else if(
-				catchPtEsq[12] > cube->pos[0]+cube->size-0.2 &&
-				catchPtEsq[12] < cube->pos[0]+cube->size+0.2){
-					cube->pos[0] -= 0.01;
-				}
-			}			
-    	}   	
-    	else{
-    		cube->clr[0] = 1.0;
-    		cube->clr[1] = 1.0;
-    		cube->clr[2] = 1.0;
-    	}
+    	    	
+      	if(caught && turn_on){
+      		cube->pos[0] = catchPtCenter[12];
+      		cube->pos[1] = catchPtCenter[13];
+      		cube->pos[2] = catchPtCenter[14];
+      	}
+      	else{
+      		collision = false;
+      		for(int i = 0; i < 10; i++){
+      			if(
+      			cubeArray[i] != cube &&
+      			cube->pos[0] > cubeArray[i]->pos[0] - cubeArray[i]->size/2.0 - cube->size/2.0 + 0.01 &&
+  				cube->pos[0] < cubeArray[i]->pos[0] + cubeArray[i]->size/2.0 + cube->size/2.0 - 0.01  &&
+  				cube->pos[2] > cubeArray[i]->pos[2] - cubeArray[i]->size/2.0 - cube->size/2.0 + 0.01  &&
+  				cube->pos[2] < cubeArray[i]->pos[2] + cubeArray[i]->size/2.0 + cube->size/2.0 - 0.01  &&
+  				cube->pos[1] <= cubeArray[i]->pos[1] + cubeArray[i]->size/2.0 + cube->size/2.0 + 0.01  &&
+  				cube->pos[1] > cubeArray[i]->pos[1]){
+  					collision = true;
+     			}
+      		}
+      		if(!collision)if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.01;
+      	}
 		glTranslatef(cube->pos[0], cube->pos[1], cube->pos[2]);
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
 		glRotatef(cube->rot[1], 0.0, 1.0, 0.0);
 		glRotatef(cube->rot[2], 0.0, 0.0, 1.0);
-		glColor3f(cube->clr[0], cube->clr[1], cube->clr[2]);
+		if(caught){
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, green);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, green);
+			glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+		}
+		else{
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, cube->clr);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, cube->clr);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, cube->clr);
+			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		}
 		glutSolidCube(cube->size);
     glPopMatrix();
 }
 
 void drawCubeArray(){
-	for(int i = 0; i < 10; i++) drawCube(cube[i]);
+	for(int i = 0; i < 10; i++){
+		drawCube(cubeArray[i]);
+	}
 }
 
 void drawCatchSphere(){
@@ -551,6 +546,11 @@ void keyInput(unsigned char key, int x, int y){
 	case 27:
 	    exit(0);
 	    break;
+	// GET SOMETHING
+	case 32:
+		if(turn_on == false) turn_on = true;
+		else turn_on = false;
+		break;
     // BASE
 	case 'a':
 	    baseSpin += 4;
@@ -672,12 +672,15 @@ void lightConfig(){
 }
 
 void createCatchPt(){
-	cube = new Cube*[10];
+	cubeArray = new Cube*[10];
     for(int i = 0; i < 10; i++){
-    	cube[i] = new Cube(0.2);
-    	cube[i]->pos[0] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
-    	cube[i]->pos[1] = 0.3 + (GLfloat)(rand()%10)/5;
-    	cube[i]->pos[2] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
+    	cubeArray[i] = new Cube(0.2);
+    	cubeArray[i]->pos[0] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
+    	cubeArray[i]->pos[1] = 0.3 + (GLfloat)(rand()%10)/5;
+    	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
+    	cubeArray[i]->clr[0] = (GLfloat)(rand()%30)/100.0 + 0.5;
+    	cubeArray[i]->clr[1] = (GLfloat)(rand()%30)/100.0 + 0.5;
+    	cubeArray[i]->clr[2] = (GLfloat)(rand()%30)/100.0 + 0.5;
     }
 }
 
@@ -701,13 +704,17 @@ int main(int argc, char** argv){
     glutInitWindowPosition(180,100);
     glutCreateWindow("DA CLAW");
 		
-    glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);
+    //glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
+    //glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glEnable(GL_LIGHTING);
     glEnable(GL_LINE_SMOOTH);	
+    glDisable(GL_LIGHT0);
+    glDisable(GL_LIGHT1);
+    glDisable(GL_LIGHT2);
+    glDisable(GL_LIGHT3);
     	
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
