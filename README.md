@@ -3,7 +3,8 @@ theCLAW
 
 A game of a Robot Arm called "The Claw"
 
-* Botões para Instruções Básicas:
+Botões para Instruções Básicas:
+
 * Rotacionar garra: AS
 * Controlar eixos: RF, TG, YH
 * Rotacionar pulso: UJ
