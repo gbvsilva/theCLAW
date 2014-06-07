@@ -1,8 +1,8 @@
 # Linux (default)
-LIBS = -lglut -lGLU -lGL -lXi -lX11 -lm -lpthread -ljpeg -lGLEW -lSDL
+LIBS = -lSDL -lGL -lGLU -lglut
 
 
-INCPATH = -I /usr/X11R6/include/ -I /.
+INCPATH = -I /usr/X11R6/include/ -I /home/graco/gitHub/theCLAW/firstTests.
 LIBPATH = -L/usr/lib -L/usr/X11R6/lib/
 CXXFLAGS = -g -Wall
 
