@@ -20,10 +20,12 @@ GLfloat fingerAng2 = -45.0;
 // ROBOT COLORSFin
 GLfloat red[] = {1.0, 0, 0};
 GLfloat green[] = {0, 1.0, 0};
+GLfloat weakGreen[] = {0, 0.2, 0};
 GLfloat blue[] = {0, 0, 1.0};
 GLfloat yellow[] = {1.0, 1.0, 0};
 GLfloat purple[] = {1.0, 0, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0};
+GLfloat grey[] = {0.5, 0.5, 0.5};
 GLfloat black[] = {0, 0, 0};
 
 // CAMERA CONTROLS
@@ -40,26 +42,31 @@ bool turn_on = false;
 bool caught = false;
 bool collision = false;
 
+// CLAW AREA
+GLfloat floorSize = 1.0;
+GLfloat gridSize = 0.1;
+GLfloat wallSize = 0.5;
+
 // LIGHT
 bool light0 = false;
 bool light1 = false;
 bool light2 = false;
 bool light3 = false;
-GLfloat light0Pos[] = {2.0, 2.0, 2.0, 1.0};
-GLfloat light0Intensity[] = {0.3, 0.3, 0.3, 1.0};
-GLfloat light1Pos[] = {0.0, 2.0, 0.0, 0.0};
-GLfloat light1Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light2Pos[] = {0.0, 1.0, 0.0, 1.0};
+// Luz 0: Difusa, acima do campo
+GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
+GLfloat light0Intensity[] = {0.5, 0.5, 0.5, 1.0};
+// Luz 1: Ambiente
+GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
+GLfloat light1Intensity[] = {0.7, 0.7, 0.7, 1.0};
+// Luz 2: Especular, câmera
+GLfloat light2Pos[] = {0, floorSize, floorSize, 1.0};
 GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
-// Luz 3: Spot, difusa, acoplada à garra
+// Luz 3: Spot difusa, acoplada à garra
 GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0, 1, 0};
 
-// CLAW AREA
-GLfloat floorSize = 1.0;
-GLfloat gridSize = 0.1;
-GLfloat wallSize = 0.5;
+
 
 // OBJECT LIST
 Cube** cubeArray;
@@ -146,7 +153,8 @@ void DrawGroundPlane()
 {
     glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, blue);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, blue);   
+	glMaterialfv(GL_FRONT, GL_SPECULAR, blue); 
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
 	glMaterialf(GL_FRONT, GL_SHININESS, 128.0); 
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0);
@@ -169,10 +177,11 @@ void DrawWalls()
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, yellow);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, yellow); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		glBegin(GL_QUADS);	
 		for(int k = 0; k < 4; k++){			
-			glNormal3f(0, 1, 0);						
+			glNormal3f(0, 0, -1);						
 			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
 				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
 					glVertex3f(i, j+gridSize, floorSize);
@@ -181,6 +190,7 @@ void DrawWalls()
 					glVertex3f(i, j, floorSize);
 				}
 			}
+			glNormal3f(-1, 0, 0);
 			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
 				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
 					glVertex3f(floorSize, j+gridSize, i+gridSize);
@@ -189,6 +199,7 @@ void DrawWalls()
 					glVertex3f(floorSize, j, i+gridSize);
 				}
 			}
+			glNormal3f(0, 0, 1);
 			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
 				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
 					glVertex3f(i+gridSize, j+gridSize, -floorSize);
@@ -197,6 +208,7 @@ void DrawWalls()
 					glVertex3f(i+gridSize, j, -floorSize);
 				}
 			}
+			glNormal3f(1, 0, 0);
 			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
 				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
 					glVertex3f(-floorSize, j+gridSize, i);
@@ -220,6 +232,7 @@ void DrawJoint(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
@@ -235,6 +248,7 @@ void MyDrawJoint(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
@@ -249,6 +263,7 @@ void DrawBase(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
@@ -258,6 +273,7 @@ void DrawBase(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
 		glPopMatrix();
@@ -266,6 +282,7 @@ void DrawBase(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		MyDrawJoint(NumSegs);
     glPopMatrix();
@@ -280,6 +297,7 @@ void DrawArmSegment(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, white);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
 	glPopMatrix();
@@ -298,6 +316,7 @@ void DrawWrist(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
@@ -308,6 +327,7 @@ void DrawWrist(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		DrawUnitSphere(NumSegs);
     glPopMatrix();
@@ -322,6 +342,7 @@ void DrawFingerBase(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		DrawUnitCylinder(NumSegs);
     glPopMatrix();
@@ -332,7 +353,8 @@ void DrawFingerBase(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, black);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);		
 		DrawUnitSphere(NumSegs);
     glPopMatrix();
 }
@@ -346,7 +368,8 @@ void DrawFingerTip(int NumSegs)
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, red);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);		
 		DrawUnitCone(NumSegs);
     glPopMatrix();
 }
@@ -356,6 +379,9 @@ void DrawRobotArm(int NumSegs)
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 		/** Base of Arm **/
+		glPushMatrix();
+			glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
+		glPopMatrix();
 		glTranslatef(0,0,0);
 		glRotatef(baseSpin,0.0,1.0,0.0);
 		DrawBase(NumSegs);
@@ -444,12 +470,14 @@ void drawCube(Cube* cube){
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
 			glMaterialfv(GL_FRONT, GL_AMBIENT, green);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, green);
-			glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+			glMaterialfv(GL_FRONT, GL_EMISSION, weakGreen);
+			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
 		}
 		else{
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, cube->clr);
 			glMaterialfv(GL_FRONT, GL_AMBIENT, cube->clr);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, cube->clr);
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);
 			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		}
 		glutSolidCube(cube->size);
@@ -464,6 +492,11 @@ void drawCubeArray(){
 
 void drawCatchSphere(){
 	glMatrixMode(GL_MODELVIEW);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, black);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);
+	glMaterialf(GL_FRONT, GL_SHININESS, 0.0);
 	glPushMatrix();
 		glTranslatef(catchPtDir[12], catchPtDir[13], catchPtDir[14]);
 		glutSolidSphere(0.03, 10, 10);
@@ -666,7 +699,7 @@ void lightConfig(){
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
 	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);
-	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 100.0);
+	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 1.0);
     glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 10.0);
     glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 }
