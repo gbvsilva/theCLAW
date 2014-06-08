@@ -39,6 +39,7 @@ bool autocam;
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
+GLfloat* catchPtWrist = (GLfloat*)malloc(sizeof(GLint)*16);
 bool turn_on = false;
 bool caught = false;
 bool collision = false;
@@ -79,7 +80,7 @@ GLuint loadBMP(const char*);
 GLfloat ambLight(GLfloat);
 void drawUnitCylinder(int);
 void drawUnitCone(int);
-void drawGroundPlane();
+void drawFloor();
 void drawWalls();
 void drawJoint(int);
 void drawJoint2(int);
@@ -181,13 +182,12 @@ void drawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
     glPopMatrix();
 }
 
-
-void drawGroundPlane(){
-    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, grey);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, grey); 
-	glMaterialfv(GL_FRONT, GL_EMISSION, grey);	  
-	glMaterialf(GL_FRONT, GL_SHININESS, 128.0);*/
+void drawFloor(){
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
+	glMaterialfv(GL_FRONT, GL_SPECULAR, white); 
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+	glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 	loadBMP("text_wall.bmp"); // Carregando a textura
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0); // Vetor normal a superficie
@@ -221,11 +221,11 @@ void drawGroundPlane(){
 void drawWalls(){
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-		/*glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, yellow);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, yellow); 
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, grey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(grey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, grey); 
 		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);*/
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
 		loadBMP("text_wall.bmp");
 		glBegin(GL_QUADS);
 			// Parede do meio visivel
@@ -632,6 +632,7 @@ void display()
 		glRotatef(wristAng,0.0,0.0,1.0);
 		glRotatef(wristRot,0.0,1.0,0.0);		
 		glTranslatef(0,0.2f,0);
+		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
 		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);		
 		glPushMatrix();
 			glRotatef(fingerAng1,0.0,0.0,1.0);
@@ -651,10 +652,11 @@ void display()
     glPopMatrix();
     glPushMatrix();
 		glLoadIdentity();
-		gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
+		if(autocam) gluLookAt(catchPtWrist[12], 5.0, catchPtWrist[14], catchPtCenter[12], catchPtCenter[13], catchPtCenter[14], up[0], up[1], up[2]);
+		else gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
 		glRotatef(camRot[1], 1, 0, 0);
 		glRotatef(camRot[0], 0, 1, 0);
-		drawGroundPlane();
+		drawFloor();
 		drawWalls();
 		drawRobotArm(16);
 		drawCubeArray();
@@ -669,7 +671,7 @@ void reshape(int w, int h){
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(30,(float)w/h,0.1,10);
+    gluPerspective(30.0,(float)w/h,0.0001,10.0);
 }
 
 void idle(){
@@ -741,30 +743,34 @@ void keyInput(unsigned char key, int x, int y){
 	    break;
 	// CAMERA CONTROLS
 	case 'z':
-	    camRot[0] += 5;
+	    if(!autocam) camRot[0] += 5;
 		if(camRot[0] > 360.0) camRot[0] -= 360.0;
 	    break;
 	case 'x':
-	    camRot[0] -= 5;
+	    if(!autocam) camRot[0] -= 5;
 		if(camRot[0] < -360.0) camRot[0] += 360.0;
 	    break;
 	case 'c':
-	    camRot[1] += 5;
+	    if(!autocam) camRot[1] += 5;
 		if(camRot[1] > 360.0) camRot[0] -= 360.0;
 	    break;
 	case 'v':
-	    camRot[1] -= 5;
+	    if(!autocam) camRot[1] -= 5;
 	    if(camRot[1] < -360.0) camRot[0] += 360.0;
 	    break;
 	case 'e':
-	    eye[2] += 0.1;
+	    if(!autocam) eye[2] += 0.1;
 	    break;
 	case 'd':
-	    eye[2] -= 0.1;
+	    if(!autocam) eye[2] -= 0.1;
 	    break;
 	case 'm':
 	    if(autocam) autocam = false;
-	    else autocam = true;
+	    else{
+	    	autocam = true;
+	    	camRot[0] = 0;
+	    	camRot[1] = 0;
+	    }	    	
 	    break;
 	// LIGHTING CONTROLS
 	// LIGHTING SWITCHS
@@ -824,7 +830,7 @@ void lightConfig(){
 	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);	
 }
 
-void createCatchPt(){
+void createCubeArray(){
 	cubeArray = new Cube*[10];
     for(int i = 0; i < 10; i++){
     	cubeArray[i] = new Cube(0.2);
@@ -837,47 +843,13 @@ void createCatchPt(){
     }
 }
 
-void createCubeArray(){
+void createCatchPt(){
 	for (int i = 0; i < 16; i++){
     	catchPtDir[i] = 0;
     	catchPtEsq[i] = 0;
     	catchPtCenter[i] = 0;
+    	catchPtWrist[i] = 0;
     }
-}
-
-
-int main(int argc, char** argv){
-	srand(time(NULL));
-	createCubeArray();
-	createCatchPt();
-	wallTexture = loadBMP("text_wall.bmp");
-    
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(512,512);
-    glutInitWindowPosition(180,100);
-    glutCreateWindow("DA CLAW");
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LINE_SMOOTH);	
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_LIGHT0);
-    glDisable(GL_LIGHT1);
-    glDisable(GL_LIGHT2);
-    glDisable(GL_LIGHT3);
-    	
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-    glutIdleFunc(idle);
-
-    glutKeyboardFunc(keyInput);
-       
-    glutMainLoop();
-
-    return EXIT_SUCCESS;
 }
 
 /* Ler imagem BMP para aplicar textura. */
@@ -942,4 +914,38 @@ GLuint loadBMP(const char * path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	return id;
+}
+
+int main(int argc, char** argv){
+	srand(time(NULL));
+	createCubeArray();
+	createCatchPt();
+	wallTexture = loadBMP("text_wall.bmp");
+    
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(512,512);
+    glutInitWindowPosition(180,100);
+    glutCreateWindow("DAAAAAAA CLAAAAAAAAW");
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LINE_SMOOTH);	
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHT0);
+    glDisable(GL_LIGHT1);
+    glDisable(GL_LIGHT2);
+    glDisable(GL_LIGHT3);
+    	
+    glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutIdleFunc(idle);
+
+    glutKeyboardFunc(keyInput);
+       
+    glutMainLoop();
+
+    return EXIT_SUCCESS;
 }
