@@ -55,6 +55,7 @@ bool light3 = false;
 // Luz 0: Difusa, acima do campo
 GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
 GLfloat light0Intensity[] = {0.5, 0.5, 0.5, 1.0};
+GLfloat light0AmbIntensity[] = {0.0, 0.0, 0.0, 0.0};
 // Luz 1: Ambiente
 GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {0.7, 0.7, 0.7, 1.0};
@@ -66,7 +67,8 @@ GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0, 1, 0};
 
-
+// TEXTURE
+GLuint wallTexture;
 
 // OBJECT LIST
 Cube** cubeArray;
@@ -152,19 +154,24 @@ void DrawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
 
 void DrawGroundPlane()
 {
+	glBindTexture(GL_TEXTURE_2D, wallTexture);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, blue);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, blue); 
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
 	glMaterialf(GL_FRONT, GL_SHININESS, 128.0); 
-    glBegin(GL_QUADS);
+    glBegin(GL_QUADS);	
     glNormal3f(0, 1, 0);
     GLfloat gridSize = 0.1;
     for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
     	for(GLfloat j = -floorSize; j < floorSize; j += gridSize){
+			glTexCoord2d(0.0,1.0);
 			glVertex3f(i,0,j+gridSize);
-			glVertex3f(i+gridSize,0,j+gridSize);
-			glVertex3f(i+gridSize,0,j);
+			glTexCoord2d(1.0,1.0);
+			glVertex3f(i+gridSize,0,j+gridSize);			
+			glTexCoord2d(1.0,0.0);
+			glVertex3f(i+gridSize,0,j);			
+			glTexCoord2d(0.0,0.0);
 			glVertex3f(i,0,j);
 		}
 	}
@@ -430,7 +437,7 @@ void DrawRobotArm(int NumSegs)
 void drawCube(Cube* cube){
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    	caught = false;
+    	if(!turn_on) caught = false;
     	//Posicionamento
     	if(
     	catchPtCenter[12] > cube->pos[0]-cube->size &&
@@ -439,14 +446,19 @@ void drawCube(Cube* cube){
     	catchPtCenter[13] < cube->pos[1]+cube->size &&
     	catchPtCenter[14] > cube->pos[2]-cube->size &&
     	catchPtCenter[14] < cube->pos[2]+cube->size){
-    		caught = true; 		
-    	}
-    	    	
-      	if(caught && turn_on){
-      		cube->pos[0] = catchPtCenter[12];
-      		cube->pos[1] = catchPtCenter[13];
-      		cube->pos[2] = catchPtCenter[14];
-      	}
+    		if(turn_on){
+				if(caught && cube->caught){
+					cube->pos[0] = catchPtCenter[12];
+			  		cube->pos[1] = catchPtCenter[13];
+			  		cube->pos[2] = catchPtCenter[14];
+				}
+				else if(!caught){
+					cube->caught = true;
+					caught = true;
+				}
+			}
+			else if(cube->caught) cube->caught = false;	
+    	}   	
       	else{
       		collision = false;
       		for(int i = 0; i < 10; i++){
@@ -467,7 +479,7 @@ void drawCube(Cube* cube){
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
 		glRotatef(cube->rot[1], 0.0, 1.0, 0.0);
 		glRotatef(cube->rot[2], 0.0, 0.0, 1.0);
-		if(caught){
+		if(cube->caught){
 			glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
 			glMaterialfv(GL_FRONT, GL_AMBIENT, green);
 			glMaterialfv(GL_FRONT, GL_SPECULAR, green);
@@ -697,6 +709,7 @@ void lightConfig(){
 	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);	
 	glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light0Intensity);
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
 	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);
@@ -731,20 +744,20 @@ int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();
 	createCatchPt();
+	wallTexture = loadBMP("text_wall.bmp");
     
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(512,512);
     glutInitWindowPosition(180,100);
     glutCreateWindow("DA CLAW");
-		
-    //glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-    //glEnable(GL_COLOR_MATERIAL);
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glEnable(GL_LIGHTING);
     glEnable(GL_LINE_SMOOTH);	
+    glEnable(GL_TEXTURE_2D);
     glDisable(GL_LIGHT0);
     glDisable(GL_LIGHT1);
     glDisable(GL_LIGHT2);
