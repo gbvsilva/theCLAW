@@ -150,38 +150,95 @@ void DrawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
     glPopMatrix();
 }
 
+/* Desenhando o solo */
 void DrawGroundPlane()
 {
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, blue);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, blue); 
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-	glMaterialf(GL_FRONT, GL_SHININESS, 128.0); 
+    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, grey);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, grey); 
+	glMaterialfv(GL_FRONT, GL_EMISSION, grey);	  
+	glMaterialf(GL_FRONT, GL_SHININESS, 128.0);*/
+	loadBMP("text_wall.bmp"); // Carregando a textura
     glBegin(GL_QUADS);
-    glNormal3f(0, 1, 0);
-    GLfloat gridSize = 0.1;
-    for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
+    glNormal3f(0, 1, 0); // Vetor normal a superficie
+    /* Definido as coordenadas da textura e do piso (modelo 3D) fazendo o mapeamento correspondente. */
+    // Coordenada (0,0) da imagem eh mapeada para a coordenada (-floorSize, -floorSize) do piso 3D.
+    glTexCoord2f(0.0,0.0); 
+    glVertex3f(-floorSize,0,-floorSize);
+    glTexCoord2f(0.0,1.0);
+    glVertex3f(-floorSize,0,floorSize);
+    glTexCoord2f(1.0,1.0);
+    glVertex3f(floorSize,0,floorSize);
+    glTexCoord2f(1.0,0.0);
+    glVertex3f(floorSize,0,-floorSize);
+    /*for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
     	for(GLfloat j = -floorSize; j < floorSize; j += gridSize){
 			glVertex3f(i,0,j+gridSize);
 			glVertex3f(i+gridSize,0,j+gridSize);
 			glVertex3f(i+gridSize,0,j);
 			glVertex3f(i,0,j);
 		}
-	}
+	}*/
     glEnd();
 }
 
+/* Desenhando as paredes */
 void DrawWalls()
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
+		/*glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, yellow);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, yellow); 
 		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		glBegin(GL_QUADS);	
-		for(int k = 0; k < 4; k++){			
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);*/
+		loadBMP("text_wall.bmp");
+		glBegin(GL_QUADS);
+			// Parede do meio visivel
+			glNormal3f(0, 0, -1);
+			glTexCoord2f(0.0,1.0);
+			glVertex3f(-floorSize, wallSize*2, floorSize);
+			glTexCoord2f(1.0,1.0);
+			glVertex3f(floorSize, wallSize*2, floorSize);
+			glTexCoord2f(1.0,0.0);
+			glVertex3f(floorSize, 0, floorSize);
+			glTexCoord2f(0.0,0.0);
+			glVertex3f(-floorSize, 0, floorSize);
+
+			// Parede mais a direita
+			glNormal3f(-1, 0, 0);
+			glTexCoord2f(0.0,1.0);
+			glVertex3f(floorSize, wallSize*2, floorSize);
+			glTexCoord2f(1.0,1.0);
+			glVertex3f(floorSize, wallSize*2, -floorSize);
+			glTexCoord2f(1.0,0.0);
+			glVertex3f(floorSize, 0, -floorSize);
+			glTexCoord2f(0.0,0.0);
+			glVertex3f(floorSize, 0, floorSize);
+
+			// Parede do meio invisivel (mais perto da camera)
+			glNormal3f(0, 0, 1);
+			glTexCoord2f(0.0,1.0);
+			glVertex3f(floorSize, wallSize*2, -floorSize);
+			glTexCoord2f(1.0,1.0);
+			glVertex3f(-floorSize, wallSize*2, -floorSize);
+			glTexCoord2f(1.0,0.0);
+			glVertex3f(-floorSize, 0, -floorSize);
+			glTexCoord2f(0.0,0.0);
+			glVertex3f(floorSize, 0, -floorSize);
+
+			// Parede mais a esquerda
+			glNormal3f(1, 0, 0);
+			glTexCoord2f(0.0,1.0);
+			glVertex3f(-floorSize, wallSize*2, -floorSize);
+			glTexCoord2f(1.0,1.0);
+			glVertex3f(-floorSize, wallSize*2, floorSize);
+			glTexCoord2f(1.0,0.0);
+			glVertex3f(-floorSize, 0, floorSize);
+			glTexCoord2f(0.0,0.0);
+			glVertex3f(-floorSize, 0, -floorSize);
+
+		/*for(int k = 0; k < 4; k++){			
 			glNormal3f(0, 0, -1);						
 			for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
 				for(GLfloat j = 0; j < wallSize*2; j += gridSize){
@@ -218,7 +275,7 @@ void DrawWalls()
 					glVertex3f(-floorSize, j, i);
 				}
 			}			
-		}
+		}*/
 		glEnd();	
     glPopMatrix();
 }
@@ -744,7 +801,8 @@ int main(int argc, char** argv){
     glEnable(GL_NORMALIZE);
     glEnable(GL_CULL_FACE);
     glEnable(GL_LIGHTING);
-    glEnable(GL_LINE_SMOOTH);	
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_TEXTURE_2D);
     glDisable(GL_LIGHT0);
     glDisable(GL_LIGHT1);
     glDisable(GL_LIGHT2);
@@ -774,7 +832,7 @@ GLuint loadBMP(const char * path)
 	// Abrindo o arquivo da imagem
 	FILE *file = fopen(path, "rb");
 	if(!file) {
-		printf("A imagem não pode ser aberta!!\n");
+		printf("A imagem nao pode ser aberta!!\n");
 		return 0;
 	}
 
@@ -809,7 +867,18 @@ GLuint loadBMP(const char * path)
 	// Fechando arquivo
 	fclose(file);
 
-	// Criando uma textura OpenGL
-	GLuint texture;
-	glGenTextures(1, &texture);
+	// Criando um identificador que ira referenciar a textura OpenGL
+	GLuint id;
+	glGenTextures(1, &id);
+
+	// Fazendo com que todas as funcoes de textura que serao aplicadas modificam a textura carregada
+	glBindTexture(GL_TEXTURE_2D, id);
+
+	// Passando o controle da textura para o controle do OpenGL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	return id;
 }
