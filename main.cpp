@@ -6,33 +6,37 @@
 #include "obj.h"
 
 // ROBOT ARM CONTROLS
-GLfloat baseTransX = -0.5;
-GLfloat baseTransZ = 0.0;
 GLfloat baseSpin = 0.0;        
-GLfloat shoulderAng = -10.0;  
-GLfloat elbowAng = -120.0;   
-GLfloat wristAng = 90.0;
-GLfloat wristRot = 10.0;
-GLfloat fingerAng1 = 45.0;
-GLfloat fingerAng2 = -45.0;
+GLfloat shoulderAng = -20.0;  
+GLfloat elbowAng = -20.0;   
+GLfloat wristAng = -90.0;
+GLfloat wristRot = 0.0;
+GLfloat fingerAng = 45.0;
+GLfloat clawScale = 0.8;
 
-// ROBOT COLORSF
+// ROBOT COLORS
 GLfloat red[] = {1.0, 0, 0};
 GLfloat green[] = {0, 1.0, 0};
 GLfloat weakGreen[] = {0, 0.2, 0};
 GLfloat blue[] = {0, 0, 1.0};
 GLfloat yellow[] = {1.0, 1.0, 0};
-GLfloat weakYellow[] = {0.5, 0.5, 0};
+GLfloat darkYellow[] = {0.25, 0.25, 0};
 GLfloat purple[] = {1.0, 0, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0};
 GLfloat grey[] = {0.5, 0.5, 0.5};
+GLfloat lightGrey[] = {0.75, 0.75, 0.75};
+GLfloat darkGrey[] = {0.25, 0.25, 0.25};
 GLfloat black[] = {0.0, 0.0, 0.0};
+
+GLfloat blueLightGrey[] = {0.7, 0.75, 0.85};
+GLfloat blueDarkGray[] = {0.25, 0.25, 0.5};
 
 // CAMERA CONTROLS
 GLfloat eye[] = {0.0, 4.0, 4.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
 GLfloat camRot[] = {0.0, 0.0};
+GLfloat shake[] = {0.0, 0.0, 0.0};
 bool autocam = false;
 
 // PHYSICS
@@ -58,7 +62,7 @@ bool light2 = false;
 bool light3 = false;
 // Luz 0: Difusa, acima do campo
 GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
-GLfloat light0Intensity[] = {0.7, 0.7, 0.7, 1.0};
+GLfloat light0Intensity[] = {1.0, 1.0, 1.0, 1.0};
 // Luz 1: Ambiente
 GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {0.4, 0.4, 0.4, 1.0};
@@ -84,6 +88,7 @@ time_t end2;
 void lightConfig();
 GLuint loadBMP(const char*);
 GLfloat ambLight(GLfloat);
+void setMaterial(GLfloat*, GLfloat);
 void drawUnitCylinder(int);
 void drawUnitCone(int);
 void drawFloor();
@@ -113,6 +118,13 @@ GLfloat* ambLight(GLfloat* clr){
 	else return black;
 }
 
+void drawUnitCube(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		glutSolidCube(1);
+	glPopMatrix();
+}
+
 void drawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 {
     int i;
@@ -130,7 +142,6 @@ void drawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-		glTranslatef(0.5f,0.5f,0.5f);
 		glScalef(0.5f,0.5f,0.5f);
 
 		// TOP
@@ -173,18 +184,7 @@ void drawUnitSphere(int NumSegs)  // x,y,z in [0,1]
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    glTranslatef(0.5f,0.5f,0.5f);
     glutSolidSphere(0.5f,NumSegs,NumSegs);
-    glPopMatrix();
-}
-
-void drawUnitCone(int NumSegs)  // x,y,z in [0,1], apex is in +Y direction
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glTranslatef(0.5f,0,0.5f);
-		glRotatef(-90, 1,0,0);
-		glutSolidCone(0.5f,1,NumSegs,NumSegs);
     glPopMatrix();
 }
 
@@ -222,7 +222,6 @@ void drawFloor(){
 	}*/
     glEnd();
 }
-
 
 /* Desenhando as paredes */
 void drawWalls(){
@@ -321,243 +320,388 @@ void drawWalls(){
     glPopMatrix();
 }
 
-void drawJoint(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glScalef(0.15f,0.15f,0.12f);
-		glRotatef(90,1,0,0);
-		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		drawUnitCylinder(NumSegs);
-    glPopMatrix();
-}
-
-void drawJoint2(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glScalef(0.15f,0.15f,0.12f);
-		glRotatef(90,1,0,0);
-		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		drawUnitCylinder(NumSegs);
-    glPopMatrix();
-}
-
-void drawBase(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glScalef(0.2f,0.025f,0.2f);
-		glTranslatef(-0.5f,0,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		drawUnitCylinder(NumSegs);
-    glPopMatrix();
-    glPushMatrix();
-		glTranslatef(-0.05f,0,-0.05f);
-		glScalef(0.1f,0.4f,0.1f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		drawUnitCylinder(NumSegs);
+void drawDAAAAACLAAAAAAAAAAW(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		// Base
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);	
+		glScalef(clawScale, clawScale, clawScale);
+		glTranslatef(0.0, 0.05, 0.0);
+		glPushMatrix();
+			glRotatef(-120, 0.0, 1.0, 0.0);
+			glTranslatef(0.0, -0.02, -0.4);
+			glRotatef(-20, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.09, 0.2);
+			drawUnitCube();
 		glPopMatrix();
 		glPushMatrix();
-		glTranslatef(0,0.4f,0);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		drawJoint2(NumSegs);
-    glPopMatrix();
-}
-
-void drawArmSegment(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glTranslatef(-0.05f,0,-0.05f);
-		glScalef(0.1f,0.5f,0.1f);
+			glRotatef(120, 0.0, 1.0, 0.0);
+			glTranslatef(0.0, -0.02, -0.4);
+			glRotatef(-20, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.09, 0.2);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.02, -0.4);
+			glRotatef(-20, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.09, 0.2);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.01, 0.0);
+			glScalef(0.7, 0.09, 0.7);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		glRotatef(baseSpin, 0.0, 1.0, 0.0);
+				
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
 		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		drawUnitCylinder(NumSegs);
-	glPopMatrix();
-	glPushMatrix();
-		glTranslatef(0,0.5f,0);
-		drawJoint(NumSegs);
-    glPopMatrix();
-}
-
-void drawWrist(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glTranslatef(-0.04f,0,-0.04f);
-		glScalef(0.08f,0.2f,0.08f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(red));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		drawUnitCylinder(NumSegs);
-    glPopMatrix();
-    glPushMatrix();
-		glTranslatef(0,0.2f,0);
-		glScalef(0.12f,0.12f,0.12f);
-		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		drawUnitSphere(NumSegs);
-    glPopMatrix();
-}
-
-void drawFingerBase(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glTranslatef(-0.025f,0,-0.025f);
-		glScalef(0.05f,0.3f,0.05f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(red));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		drawUnitCylinder(NumSegs);
-    glPopMatrix();
-    glPushMatrix();
-		glTranslatef(0,0.3f,0);
-		glScalef(0.08f,0.08f,0.08f);
-		glTranslatef(-0.5f,-0.5f,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, black);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(black));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);		
-		drawUnitSphere(NumSegs);
-    glPopMatrix();
-}
-
-void drawFingerTip(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		glScalef(0.05f,0.25f,0.05f);
-		glTranslatef(-0.5f,0,-0.5f);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(red));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, red);
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);		
-		drawUnitCone(NumSegs);
-    glPopMatrix();
-}
-
-void drawRobotArm(int NumSegs)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		/** Base of Arm **/
-		glTranslatef(0,0,0);
-		glRotatef(baseSpin,0.0,1.0,0.0);
-		drawBase(NumSegs);
-
-		/** Arm Segment #1 **/
-		glTranslatef(0,0.4f,0);
-		glRotatef(shoulderAng,0.0,0.0,1.0);
-		drawArmSegment(NumSegs);
-
-		/** Arm Segment #2 **/
-		glTranslatef(0,0.5f,0);
-		glRotatef(elbowAng,0.0,0.0,1.0);
-		drawArmSegment(NumSegs);
-
-		/** Wrist **/
-		glTranslatef(0,0.5f,0);
-		glRotatef(wristAng,0.0,0.0,1.0);
-		glRotatef(wristRot,0.0,1.0,0.0);
-		drawWrist(NumSegs);	
-			
-		/** Fingers **/
-		glTranslatef(0,0.2f,0);    
-		glRotatef(fingerAng1,0.0,0.0,1.0);
-		drawFingerBase(NumSegs);
-		  
-		glTranslatef(0, 0.3f, 0);
-		glRotatef(-90, 0, 0, 1);
-		drawFingerTip(NumSegs);
-		 
-		glRotatef(90, 0, 0, 1);
-		glTranslatef(0, -0.3f, 0);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, white); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
 		
-		glRotatef(fingerAng2*2,0.0,0.0,1.0);
-		drawFingerBase(NumSegs);
-		glTranslatef(0, 0.3f, 0);
-		glRotatef(90, 0, 0, 1);
-		drawFingerTip(NumSegs);
-    glPopMatrix();				
+		glPushMatrix();			
+			glTranslatef(0.0, 0.05, -0.15);
+			glRotatef(-20, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.1, 0.25);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();			
+			glScalef(0.5, 0.1, 0.5);
+			drawUnitCylinder(32);
+		glPopMatrix();		
+		
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+		glTranslatef(0.0, 0.4, -0.05);
+		glPushMatrix();
+			glScalef(0.2, 0.8, 0.1);
+			drawUnitCube();
+		glPopMatrix();
+		glTranslatef(0.0, 0.4, 0.0);
+		glRotatef(shoulderAng, 0.0, 0.0, 1.0);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.2, 0.1, 0.2);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		
+		// Porca que segura os braços
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+		glTranslatef(0.0, 0.0, 0.075);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.3, 0.1);
+			drawUnitCylinder(6);
+		glPopMatrix();
+		
+		// Primeiro braço
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+		glTranslatef(0.0, 0.0, 0.075);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.2, 0.1, 0.2);
+			drawUnitCylinder(32);
+		glPopMatrix();	
+		glTranslatef(0.0, 0.4, 0.0);
+		glPushMatrix();
+			glScalef(0.2, 0.8, 0.1);
+			drawUnitCube();
+		glPopMatrix();		
+		glTranslatef(0.0, 0.4, 0.0);
+		glRotatef(elbowAng, 0.0, 0.0, 1.0);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.2, 0.1, 0.2);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		
+		// Porca que segura os braços
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+		glTranslatef(0.0, 0.0, -0.075);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.3, 0.1);
+			drawUnitCylinder(6);
+		glPopMatrix();		
+		
+		// Segundo braço
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+		glTranslatef(0.0, 0.0, -0.075);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.2, 0.1, 0.2);
+			drawUnitCylinder(32);
+		glPopMatrix();	
+		glTranslatef(0.0, 0.4, 0.0);
+		glPushMatrix();
+			glScalef(0.2, 0.8, 0.1);
+			drawUnitCube();
+		glPopMatrix();				
+		glTranslatef(0.0, 0.4, 0.0);
+		glRotatef(wristAng, 0.0, 0.0, 1.0);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.2, 0.1, 0.2);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);	
+					
+		// Garra
+		glTranslatef(0.0, 0.0, 0.05);
+		glPushMatrix();
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.15, 0.3, 0.15);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+		glTranslatef(0.0, 0.2, 0.075);		
+		glRotatef(wristRot, 0.0, 1.0, 0.0);
+		glPushMatrix();
+			glScalef(0.15, 0.4, 0.15);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		glTranslatef(0.0, 0.1, 0.0);
+		
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+		// WHY
+		glPushMatrix();
+			glRotatef(-wristRot*2+22.5, 0.0, 1.0, 0.0);
+			glPushMatrix();			
+				glTranslatef(0.0, -0.05, 0.0);
+				glRotatef(90, 1.0, 0.0, 0.0);
+				glScalef(0.05, 0.5, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+			glRotatef(-wristRot*2+67.5, 0.0, 1.0, 0.0);
+			glPushMatrix();
+				glTranslatef(0.0, -0.15, 0.0);
+				glRotatef(90, 1.0, 0.0, 0.0);
+				glScalef(0.05, 0.5, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+		glPopMatrix();
+		
+		glPushMatrix();
+			glRotatef(45, 0.0, 1.0, 0.0);
+			glTranslatef(0.0, -0.1, 0.0);
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.05, 0.5, 0.05);
+			drawUnitCube();
+		glPopMatrix();
+		
+		// Dedo 1
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, -0.05);
+			glRotatef(-fingerAng, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.15, 0.0);
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();	
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);		
+		
+			glTranslatef(0.0, 0.15, 0.0);				
+			glPushMatrix();
+				glRotatef(90, 0.0, 0.0, 1.0);
+				glScalef(0.1, 0.1, 0.1);
+				drawUnitCylinder(32);
+			glPopMatrix();
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+			glRotatef(70, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.15, 0.0);	
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();			
+		glPopMatrix();
+				
+		// Dedo 2
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		glPushMatrix();
+			glTranslatef(-0.05, 0.0, 0.0);
+			glRotatef(fingerAng, 0.0, 0.0, 1.0);
+			glTranslatef(0.0, 0.15, 0.0);
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();	
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+			glTranslatef(0.0, 0.15, 0.0);				
+			glPushMatrix();
+				glRotatef(90, 1.0, 0.0, 0.0);
+				glScalef(0.1, 0.1, 0.1);
+				drawUnitCylinder(32);
+			glPopMatrix();
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+			glRotatef(-70, 0.0, 0.0, 1.0);
+			glTranslatef(0.0, 0.15, 0.0);	
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+		glPopMatrix();
+		
+		// Dedo 3
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, 0.05);
+			glRotatef(fingerAng, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.15, 0.0);
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();	
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+			glTranslatef(0.0, 0.15, 0.0);				
+			glPushMatrix();
+				glRotatef(90, 0.0, 0.0, 1.0);
+				glScalef(0.1, 0.1, 0.1);
+				drawUnitCylinder(32);
+			glPopMatrix();
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+			glRotatef(-70, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.15, 0.0);	
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+		glPopMatrix();
+		
+		// Dedo 4
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		glPushMatrix();
+			glTranslatef(0.05, 0.0, 0.0);
+			glRotatef(-fingerAng, 0.0, 0.0, 1.0);
+			glTranslatef(0.0, 0.15, 0.0);
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();	
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		
+			glTranslatef(0.0, 0.15, 0.0);				
+			glPushMatrix();
+				glRotatef(90, 1.0, 0.0, 0.0);
+				glScalef(0.1, 0.1, 0.1);
+				drawUnitCylinder(32);
+			glPopMatrix();
+			
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
+			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
+			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
+			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
+			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		
+			glRotatef(70, 0.0, 0.0, 1.0);
+			glTranslatef(0.0, 0.15, 0.0);	
+			glPushMatrix();
+				glScalef(0.05, 0.3, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+		glPopMatrix();
+	glPopMatrix();
 }
 
 void drawCube(Cube* cube){
 	glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    	/*
-    	if(!clawSwitch){
-    		caught = false;
-    		cube->caught = false;
-    	}    	
-    	//Captura
-    	if(
-    	catchPtCenter[12] > cube->pos[0]-cube->size &&
-    	catchPtCenter[12] < cube->pos[0]+cube->size &&
-    	catchPtCenter[13] > cube->pos[1]-cube->size &&
-    	catchPtCenter[13] < cube->pos[1]+cube->size &&
-    	catchPtCenter[14] > cube->pos[2]-cube->size &&
-    	catchPtCenter[14] < cube->pos[2]+cube->size){
-    		if(clawSwitch){
-    			if(caught && cube->caught){
-					if(fingerAng1 > 45.0){
-						clawSwitch = false;
-						cube->caught = false;
-					}
-					else if(fingerAng1 < 45.0){
-						fingerAng1 = 45.0;
-						fingerAng2 = -45.0;
-					}
-					else{			
-						cube->pos[0] = catchPtCenter[12];
-				  		cube->pos[1] = catchPtCenter[13];
-				  		cube->pos[2] = catchPtCenter[14];
-				  	}
-				}
-				else if(!caught){
-					cube->caught = true;
-					caught = true;
-					fingerAng1 = 45.0;
-					fingerAng2 = -45.0;
-				}
-			}
-    	}*/
+    glPushMatrix();    	
     	if(!clawSwitch){
     		caught = false;
     		cube->caught = false;
@@ -571,14 +715,11 @@ void drawCube(Cube* cube){
     	catchPtCenter[14] > cube->pos[2]-cube->size &&
     	catchPtCenter[14] < cube->pos[2]+cube->size){    		
 			if(caught && cube->caught){
-				if(fingerAng1 > 45.0){
+				if(fingerAng > 45.0){
 					clawSwitch = false;
 					cube->caught = false;
 				}
-				else if(fingerAng1 < 45.0){
-					fingerAng1 = 45.0;
-					fingerAng2 = -45.0;
-				}
+				else if(fingerAng < 45.0) fingerAng = 45.0;
 				else{			
 					cube->pos[0] = catchPtCenter[12];
 			  		cube->pos[1] = catchPtCenter[13];
@@ -588,8 +729,7 @@ void drawCube(Cube* cube){
 			else if(!caught){
 				cube->caught = true;
 				caught = true;
-				fingerAng1 = 45.0;
-				fingerAng2 = -45.0;
+				fingerAng = 45.0;
 			}
     	}	
       	if(!cube->caught){
@@ -657,6 +797,7 @@ void drawCatchSphere(){
 	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+	/*
 	glPushMatrix();
 		glTranslatef(catchPtDir[12], catchPtDir[13], catchPtDir[14]);
 		glutSolidSphere(0.03, 10, 10);
@@ -665,45 +806,48 @@ void drawCatchSphere(){
 		glTranslatef(catchPtEsq[12], catchPtEsq[13], catchPtEsq[14]);
 		glutSolidSphere(0.03, 10, 10);
 	glPopMatrix();
-	/*
+	*/
 	glPushMatrix();
 		glTranslatef(catchPtCenter[12], catchPtCenter[13], catchPtCenter[14]);
 		glutSolidSphere(0.03, 10, 10);
 	glPopMatrix();
-	*/
+}
+
+void setMaterial(GLfloat* color, GLfloat shininess){
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(color));
+	glMaterialfv(GL_FRONT, GL_SPECULAR, color);
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);
+	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 }
 
 void drawCollectBox(){
 	glMatrixMode(GL_MODELVIEW);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(yellow));
-	glMaterialfv(GL_FRONT, GL_SPECULAR, yellow);
-	glMaterialfv(GL_FRONT, GL_EMISSION, weakYellow);
-	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+	setMaterial(yellow, 64.0);
 	glPushMatrix();
 		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[0]+collectArea[1])/2);
 		glPushMatrix();
 			glTranslatef(0.0, -0.01, 0.0);
-			glScalef(6.04, 0.2, 6.04);
+			glScalef(6.2, 0.2, 6.2);
 			glutSolidCube(0.1);
 		glPopMatrix();
 		glPushMatrix();
-			glTranslatef(0.0, 0.0, 0.3);
+			glTranslatef(0.0, 0.2, 0.3);
 			glScalef(6.0, 4.0, 0.2);
 			glutSolidCube(0.1);
 		glPopMatrix();
 		glPushMatrix();
-			glTranslatef(0.0, 0.0, -0.3);
+			glTranslatef(0.0, 0.2, -0.3);
 			glScalef(6.0, 4.0, 0.2);
 			glutSolidCube(0.1);
 		glPopMatrix();
 		glPushMatrix();
-			glTranslatef(0.3, 0.0, 0.0);
+			glTranslatef(0.3, 0.2, 0.0);
 			glScalef(0.2, 4.0, 6.0);
 			glutSolidCube(0.1);
 		glPopMatrix();
 		glPushMatrix();
-			glTranslatef(-0.3, 0.0, 0.0);
+			glTranslatef(-0.3, 0.2, 0.0);
 			glScalef(0.2, 4.0, 6.0);
 			glutSolidCube(0.1);
 		glPopMatrix();
@@ -716,33 +860,39 @@ void display(){
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     	glLoadIdentity();
-		glTranslatef(0,0,0);
-		glRotatef(baseSpin,0.0,1.0,0.0);
-		glTranslatef(0,0.4f,0);
-		glRotatef(shoulderAng,0.0,0.0,1.0);
-		glTranslatef(0,0.5f,0);
-		glRotatef(elbowAng,0.0,0.0,1.0);
-		glTranslatef(0,0.5f,0);
-		glRotatef(wristAng,0.0,0.0,1.0);
-		glRotatef(wristRot,0.0,1.0,0.0);		
-		glTranslatef(0,0.2f,0);
+    	glScalef(clawScale, clawScale, clawScale);
+		glTranslatef(0.0, 0.05, 0.0);		
+		glRotatef(baseSpin, 0.0, 1.0, 0.0);
+		glTranslatef(0.0, 0.8, -0.05);	
+		glRotatef(shoulderAng, 0.0, 0.0, 1.0);
+		glTranslatef(0.0, 0.8, 0.15);
+		glRotatef(elbowAng, 0.0, 0.0, 1.0);
+		glTranslatef(0.0, 0.8, -0.15);
+		glRotatef(wristAng, 0.0, 0.0, 1.0);
+					
+		// Garra
+		glTranslatef(0.0, 0.2, 0.125);	
+		glRotatef(wristRot, 0.0, 1.0, 0.0);
+		glTranslatef(0.0, 0.1, 0.0);
+		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
+
+		// Dedo 1
 		glPushMatrix();
-			glTranslatef(0.0, 0.0, 0.2);
-			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
+			glTranslatef(0.0, 0.0, -0.05);
+			glRotatef(-fingerAng, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.3, 0.0);
+			glRotatef(70, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.3, 0.0);	
+			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtDir);		
 		glPopMatrix();
-		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);		
+		
+		// Dedo 2
 		glPushMatrix();
-			glRotatef(fingerAng1,0.0,0.0,1.0);
-			glTranslatef(0, 0.3f, 0);
-			glRotatef(-90, 0, 0, 1);
-			glTranslatef(0, 0.25f, 0);
-			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtDir);
-		glPopMatrix();
-		glPushMatrix();
-			glRotatef(fingerAng2,0.0,0.0,1.0);
-			glTranslatef(0, 0.3f, 0);
-			glRotatef(90, 0, 0, 1);
-			glTranslatef(0, 0.25f, 0);
+			glTranslatef(0.0, 0.0, 0.05);
+			glRotatef(fingerAng, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.3, 0.0);
+			glRotatef(-70, 1.0, 0.0, 0.0);
+			glTranslatef(0.0, 0.3, 0.0);	
 			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtEsq);
 		glPopMatrix();
 		for(int i = 0; i < 16; i++) catchPtCenter[i] = (catchPtDir[i]+catchPtEsq[i])/2.0;
@@ -750,12 +900,12 @@ void display(){
     glPushMatrix();
 		glLoadIdentity();
 		if(autocam) gluLookAt(catchPtWrist[12], 5.0, catchPtWrist[14], catchPtCenter[12], catchPtCenter[13], catchPtCenter[14], up[0], up[1], up[2]);
-		else gluLookAt(eye[0], eye[1], eye[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
+		else gluLookAt(eye[0]+shake[0], eye[1]+shake[1], eye[2]+shake[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
 		glRotatef(camRot[1], 1, 0, 0);
 		glRotatef(camRot[0], 0, 1, 0);
 		drawFloor();
 		drawWalls();
-		drawRobotArm(16);
+		drawDAAAAACLAAAAAAAAAAW();
 		drawCubeArray();
 		drawCollectBox();
 		drawCatchSphere();
@@ -773,6 +923,9 @@ void reshape(int w, int h){
 }
 
 void idle(){
+	shake[0] = 0;
+	shake[1] = 0;
+	shake[2] = 0;
 	lightConfig();
 	if(cubeLeft == 0){
 		totalCube += 2;
@@ -837,17 +990,29 @@ void keyInput(unsigned char key, int x, int y){
 	    wristRot -= 4;
 	    if(wristRot < -360.0) wristRot += 360.0;
 	    break;
+	case 'i':
+	    wristRot += 66.6;
+	    shake[0] = (float)(rand()%3)/7.5 - 0.2;
+	    shake[1] = (float)(rand()%3)/7.5 - 0.2;
+	    shake[2] = (float)(rand()%3)/7.5 - 0.2;
+	    if(wristRot > 360.0) wristRot -= 360.0;
+	    break;
+	case 'k':
+	    wristRot -= 66.6;
+	    shake[0] = (float)(rand()%3)/7.5 - 0.2;
+	    shake[1] = (float)(rand()%3)/7.5 - 0.2;
+	    shake[2] = (float)(rand()%3)/7.5 - 0.2;
+	    if(wristRot < -360.0) wristRot += 360.0;
+	    break;
 	// FINGERS
 	case 'q':
-	    if(fingerAng1 < 100.0){
-			fingerAng1 += 5;
-			fingerAng2 -= 5;
+	    if(fingerAng < 100.0){
+			fingerAng += 5;
 		}
 	    break;
 	case 'w':
-		if(fingerAng1 > 35.0){
-			fingerAng1 -= 4;
-			fingerAng2 += 4;
+		if(fingerAng > 35.0){
+			fingerAng -= 4;
 		}
 	    break;
 	// CAMERA CONTROLS
