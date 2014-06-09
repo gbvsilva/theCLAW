@@ -14,6 +14,7 @@ class Obj{
 class Cube : public Obj{
 	public:
 	GLfloat size;
+	int type;
 	Cube(GLfloat s);	
 };
 

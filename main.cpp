@@ -5,7 +5,6 @@
 #include <time.h>
 #include "obj.h"
 
-
 // ROBOT ARM CONTROLS
 GLfloat baseTransX = -0.5;
 GLfloat baseTransZ = 0.0;
@@ -17,12 +16,13 @@ GLfloat wristRot = 10.0;
 GLfloat fingerAng1 = 45.0;
 GLfloat fingerAng2 = -45.0;
 
-// ROBOT COLORSFin
+// ROBOT COLORSF
 GLfloat red[] = {1.0, 0, 0};
 GLfloat green[] = {0, 1.0, 0};
 GLfloat weakGreen[] = {0, 0.2, 0};
 GLfloat blue[] = {0, 0, 1.0};
 GLfloat yellow[] = {1.0, 1.0, 0};
+GLfloat weakYellow[] = {0.5, 0.5, 0};
 GLfloat purple[] = {1.0, 0, 1.0};
 GLfloat white[] = {1.0, 1.0, 1.0};
 GLfloat grey[] = {0.5, 0.5, 0.5};
@@ -33,21 +33,23 @@ GLfloat eye[] = {0.0, 4.0, 4.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
 GLfloat camRot[] = {0.0, 0.0};
-bool autocam;
+bool autocam = false;
 
 // PHYSICS
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtWrist = (GLfloat*)malloc(sizeof(GLint)*16);
-bool turn_on = false;
+bool clawSwitch = false;
 bool caught = false;
 bool collision = false;
+bool textureSwitch = false;
 
 // CLAW AREA
-GLfloat floorSize = 1.0;
-GLfloat gridSize = 0.1;
-GLfloat wallSize = 0.5;
+GLfloat floorSize = 2.5;
+GLfloat gridSize = 0.5;
+GLfloat wallSize = 1;
+GLfloat collectArea[] = {0.4, 1.0, 0.4, 1.0};
 
 // LIGHT
 bool light0 = false;
@@ -56,7 +58,7 @@ bool light2 = false;
 bool light3 = false;
 // Luz 0: Difusa, acima do campo
 GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
-GLfloat light0Intensity[] = {0.3, 0.3, 0.3, 1.0};
+GLfloat light0Intensity[] = {0.7, 0.7, 0.7, 1.0};
 // Luz 1: Ambiente
 GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {0.4, 0.4, 0.4, 1.0};
@@ -68,11 +70,15 @@ GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0.0, -1.0, 0.0};
 
-// TEXTURE
-GLuint wallTexture;
-
 // OBJECT LIST
 Cube** cubeArray;
+int totalCube = 1;
+int cubeLeft = 1;
+int maxCube = 1;
+clock_t start;
+clock_t end;
+time_t start2;
+time_t end2;
 
 // PROTÓTIPOS
 void lightConfig();
@@ -188,7 +194,7 @@ void drawFloor(){
 	glMaterialfv(GL_FRONT, GL_SPECULAR, white); 
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
 	glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-	loadBMP("text_wall.bmp"); // Carregando a textura
+	if(textureSwitch) loadBMP("text_wall.bmp"); // Carregando a textura
     glBegin(GL_QUADS);
     glNormal3f(0, 1, 0); // Vetor normal a superficie
     /* Definido as coordenadas da textura e do piso (modelo 3D) fazendo o mapeamento correspondente. */
@@ -201,6 +207,7 @@ void drawFloor(){
     glVertex3f(floorSize,0,floorSize);
     glTexCoord2f(1.0,0.0);
     glVertex3f(floorSize,0,-floorSize);
+    
     /*for(GLfloat i = -floorSize; i < floorSize; i += gridSize){
     	for(GLfloat j = -floorSize; j < floorSize; j += gridSize){
 			glTexCoord2d(0.0,1.0);
@@ -226,7 +233,7 @@ void drawWalls(){
 		glMaterialfv(GL_FRONT, GL_SPECULAR, grey); 
 		glMaterialfv(GL_FRONT, GL_EMISSION, black);
 		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		loadBMP("text_wall.bmp");
+		if(textureSwitch) loadBMP("text_wall.bmp");
 		glBegin(GL_QUADS);
 			// Parede do meio visivel
 			glNormal3f(0, 0, -1);
@@ -514,11 +521,12 @@ void drawRobotArm(int NumSegs)
 void drawCube(Cube* cube){
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    	if(!turn_on){
+    	/*
+    	if(!clawSwitch){
     		caught = false;
     		cube->caught = false;
     	}    	
-    	//Posicionamento
+    	//Captura
     	if(
     	catchPtCenter[12] > cube->pos[0]-cube->size &&
     	catchPtCenter[12] < cube->pos[0]+cube->size &&
@@ -526,10 +534,10 @@ void drawCube(Cube* cube){
     	catchPtCenter[13] < cube->pos[1]+cube->size &&
     	catchPtCenter[14] > cube->pos[2]-cube->size &&
     	catchPtCenter[14] < cube->pos[2]+cube->size){
-    		if(turn_on){
+    		if(clawSwitch){
     			if(caught && cube->caught){
 					if(fingerAng1 > 45.0){
-						turn_on = false;
+						clawSwitch = false;
 						cube->caught = false;
 					}
 					else if(fingerAng1 < 45.0){
@@ -549,10 +557,44 @@ void drawCube(Cube* cube){
 					fingerAng2 = -45.0;
 				}
 			}
+    	}*/
+    	if(!clawSwitch){
+    		caught = false;
+    		cube->caught = false;
+    	}    	
+    	//Captura
+    	else if(
+    	catchPtCenter[12] > cube->pos[0]-cube->size &&
+    	catchPtCenter[12] < cube->pos[0]+cube->size &&
+    	catchPtCenter[13] > cube->pos[1]-cube->size &&
+    	catchPtCenter[13] < cube->pos[1]+cube->size &&
+    	catchPtCenter[14] > cube->pos[2]-cube->size &&
+    	catchPtCenter[14] < cube->pos[2]+cube->size){    		
+			if(caught && cube->caught){
+				if(fingerAng1 > 45.0){
+					clawSwitch = false;
+					cube->caught = false;
+				}
+				else if(fingerAng1 < 45.0){
+					fingerAng1 = 45.0;
+					fingerAng2 = -45.0;
+				}
+				else{			
+					cube->pos[0] = catchPtCenter[12];
+			  		cube->pos[1] = catchPtCenter[13];
+			  		cube->pos[2] = catchPtCenter[14];
+			  	}
+			}
+			else if(!caught){
+				cube->caught = true;
+				caught = true;
+				fingerAng1 = 45.0;
+				fingerAng2 = -45.0;
+			}
     	}	
       	if(!cube->caught){
       		collision = false;
-      		for(int i = 0; i < 10; i++){
+      		for(int i = 0; i < totalCube; i++){
       			if(
       			cubeArray[i] != cube &&
       			cube->pos[0] > cubeArray[i]->pos[0] - cubeArray[i]->size/2.0 - cube->size/2.0 + 0.01 &&
@@ -564,7 +606,21 @@ void drawCube(Cube* cube){
   					collision = true;
      			}
       		}
-      		if(!collision)if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.01;
+      		if(!collision){
+      			if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.01;
+      			else if(cube->pos[1] < cube->size/2.0){
+      				cube->pos[1] = 0.1;
+      				if(
+      				cube->pos[0] > collectArea[0] &&
+      				cube->pos[0] < collectArea[1] &&
+      				cube->pos[2] > collectArea[2] &&
+      				cube->pos[2] < collectArea[3]){
+ 						cube->type = 0;
+ 						cube->pos[1] = -10.0;
+ 						cubeLeft -= 1;
+ 					}
+ 				}      			
+      		}
       	}
 		glTranslatef(cube->pos[0], cube->pos[1], cube->pos[2]);
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
@@ -589,8 +645,8 @@ void drawCube(Cube* cube){
 }
 
 void drawCubeArray(){
-	for(int i = 0; i < 10; i++){
-		drawCube(cubeArray[i]);
+	for(int i = 0; i < totalCube; i++){
+		if(cubeArray[i]->type != 0) drawCube(cubeArray[i]);
 	}
 }
 
@@ -600,7 +656,7 @@ void drawCatchSphere(){
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
 	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
-	glMaterialf(GL_FRONT, GL_SHININESS, 0.0);
+	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
 	glPushMatrix();
 		glTranslatef(catchPtDir[12], catchPtDir[13], catchPtDir[14]);
 		glutSolidSphere(0.03, 10, 10);
@@ -609,14 +665,52 @@ void drawCatchSphere(){
 		glTranslatef(catchPtEsq[12], catchPtEsq[13], catchPtEsq[14]);
 		glutSolidSphere(0.03, 10, 10);
 	glPopMatrix();
+	/*
 	glPushMatrix();
 		glTranslatef(catchPtCenter[12], catchPtCenter[13], catchPtCenter[14]);
 		glutSolidSphere(0.03, 10, 10);
 	glPopMatrix();
+	*/
 }
 
-void display()
-{
+void drawCollectBox(){
+	glMatrixMode(GL_MODELVIEW);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(yellow));
+	glMaterialfv(GL_FRONT, GL_SPECULAR, yellow);
+	glMaterialfv(GL_FRONT, GL_EMISSION, weakYellow);
+	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+	glPushMatrix();
+		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[0]+collectArea[1])/2);
+		glPushMatrix();
+			glTranslatef(0.0, -0.01, 0.0);
+			glScalef(6.04, 0.2, 6.04);
+			glutSolidCube(0.1);
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, 0.3);
+			glScalef(6.0, 4.0, 0.2);
+			glutSolidCube(0.1);
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, -0.3);
+			glScalef(6.0, 4.0, 0.2);
+			glutSolidCube(0.1);
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.3, 0.0, 0.0);
+			glScalef(0.2, 4.0, 6.0);
+			glutSolidCube(0.1);
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(-0.3, 0.0, 0.0);
+			glScalef(0.2, 4.0, 6.0);
+			glutSolidCube(0.1);
+		glPopMatrix();
+	glPopMatrix();	
+}
+
+void display(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -632,7 +726,10 @@ void display()
 		glRotatef(wristAng,0.0,0.0,1.0);
 		glRotatef(wristRot,0.0,1.0,0.0);		
 		glTranslatef(0,0.2f,0);
-		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, 0.2);
+			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
+		glPopMatrix();
 		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);		
 		glPushMatrix();
 			glRotatef(fingerAng1,0.0,0.0,1.0);
@@ -660,6 +757,7 @@ void display()
 		drawWalls();
 		drawRobotArm(16);
 		drawCubeArray();
+		drawCollectBox();
 		drawCatchSphere();
     glPopMatrix();	
     
@@ -671,11 +769,22 @@ void reshape(int w, int h){
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(30.0,(float)w/h,0.0001,10.0);
+    gluPerspective(30.0, (float)w/h, 0.01, 50.0);
 }
 
 void idle(){
 	lightConfig();
+	if(cubeLeft == 0){
+		totalCube += 2;
+		if(totalCube > maxCube){
+			end = clock();
+			end2 = time(NULL);
+			printf("Tempo total:\n%d clocks\n%.f segundos\n", (int)(end-start), difftime(end2, start2));
+			exit(0);
+		}
+		cubeLeft = totalCube;
+		createCubeArray();
+	}
     glutPostRedisplay();
 }
 
@@ -687,8 +796,8 @@ void keyInput(unsigned char key, int x, int y){
 	    break;
 	// GET SOMETHING
 	case 32:
-		if(turn_on == false) turn_on = true;
-		else turn_on = false;
+		if(clawSwitch == false) clawSwitch = true;
+		else clawSwitch = false;
 		break;
     // BASE
 	case 'a':
@@ -831,15 +940,22 @@ void lightConfig(){
 }
 
 void createCubeArray(){
-	cubeArray = new Cube*[10];
-    for(int i = 0; i < 10; i++){
+	if(cubeArray != NULL) delete[] cubeArray;
+	cubeArray = new Cube*[totalCube];
+	int type;
+    for(int i = 0; i < totalCube; i++){
     	cubeArray[i] = new Cube(0.2);
-    	cubeArray[i]->pos[0] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
+    	cubeArray[i]->pos[0] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
     	cubeArray[i]->pos[1] = 0.3 + (GLfloat)(rand()%10)/5;
-    	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(floorSize*18))/10.0 - (floorSize-0.1);
-    	cubeArray[i]->clr[0] = (GLfloat)(rand()%30)/100.0 + 0.5;
-    	cubeArray[i]->clr[1] = (GLfloat)(rand()%30)/100.0 + 0.5;
-    	cubeArray[i]->clr[2] = (GLfloat)(rand()%30)/100.0 + 0.5;
+    	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
+    	cubeArray[i]->clr[0] = (GLfloat)(rand()%6)/10.0;
+    	cubeArray[i]->clr[1] = (GLfloat)(rand()%6)/10.0;
+    	cubeArray[i]->clr[2] = (GLfloat)(rand()%6)/10.0;
+    	type = rand()%3+1;
+    	cubeArray[i]->type = type;
+    	if(type == 1) cubeArray[i]->clr[0] = 1.0;
+    	else if(type == 2) cubeArray[i]->clr[1] = 1.0;
+    	else cubeArray[i]->clr[2] = 1.0;
     }
 }
 
@@ -920,8 +1036,9 @@ int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();
 	createCatchPt();
-	wallTexture = loadBMP("text_wall.bmp");
-    
+	start = clock();
+	start2 = time(NULL);
+	    
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(512,512);
