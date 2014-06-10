@@ -1,5 +1,7 @@
 # theCLAW
 
+![theCLAW](/theCLAW.jpg)
+
 ## Instruções
 
 O seu objeto é levar todos os blocos à caixa amarela o mais rápido possível. Elas virão em 5 ondas, com uma quantidade crescente de caixas. No final, você terá o seu tempo de término.
