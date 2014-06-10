@@ -55,6 +55,7 @@ GLfloat gridSize = 0.5;
 GLfloat wallSize = 1;
 GLfloat collectArea[] = {0.4, 1.0, 0.4, 1.0};
 
+bool asd = true;
 // LIGHT
 bool light0 = false;
 bool light1 = false;
@@ -69,35 +70,33 @@ GLfloat light1Intensity[] = {0.4, 0.4, 0.4, 1.0};
 // Luz 2: Especular, câmera
 GLfloat light2Pos[] = {0, floorSize, floorSize, 1.0};
 GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
-// Luz 3: Spot difusa, acoplada à garra
+// Luz 3: Spot difusa, acoplada à garra. Parte difusa não funcionando
 GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
 GLfloat light3Dir[] = {0.0, -1.0, 0.0};
-
 
 // TEXTURE
 GLuint wallTexture; // Identificador da textura atualmente em uso
 unsigned int width, height; // Altura x Largura da imagem de textura
 unsigned char * data; // Dados da imagem de textura
 
-
 // OBJECT LIST
 Cube** cubeArray;
 int totalCube = 1;
 int cubeLeft = 1;
 int maxCube = 1;
-clock_t start;
-clock_t end;
-time_t start2;
-time_t end2;
+time_t start;
+time_t end;
 
 // PROTÓTIPOS
 void lightConfig();
 GLuint loadBMP(const char*);
 GLfloat ambLight(GLfloat);
-void setMaterial(GLfloat*, GLfloat);
+void setMaterial(GLfloat[3], GLfloat);
 void drawUnitCylinder(int);
 void drawUnitCone(int);
+void drawUnitCube();
+void drawUnitSphere();
 void drawFloor();
 void drawWalls();
 void drawJoint(int);
@@ -196,11 +195,7 @@ void drawUnitSphere(int NumSegs)  // x,y,z in [0,1]
 }
 
 void drawFloor(){
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white); 
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-	glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+    setMaterial(white, 128.0);
 	
 	// Carregando a textura 'wallTexture'
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
@@ -225,11 +220,7 @@ void drawFloor(){
 void drawWalls(){
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, grey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(grey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, grey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(white, 128.0);
 
 		// Carregando a textura 'wallTexture'
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
@@ -287,11 +278,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 		// Base
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);	
+		setMaterial(darkGrey, 128.0);
+		
 		glScalef(clawScale, clawScale, clawScale);
 		glTranslatef(0.0, 0.05, 0.0);
 		glPushMatrix();
@@ -320,12 +308,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCylinder(32);
 		glPopMatrix();
 		glRotatef(baseSpin, 0.0, 1.0, 0.0);
-				
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, white); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
+		
+		setMaterial(white, 96.0);
 		
 		glPushMatrix();			
 			glTranslatef(0.0, 0.05, -0.15);
@@ -338,11 +322,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCylinder(32);
 		glPopMatrix();		
 		
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		setMaterial(blueLightGrey, 96.0);
 		
 		glTranslatef(0.0, 0.4, -0.05);
 		glPushMatrix();
@@ -358,11 +338,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		
 		// Porca que segura os braços
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
 		
 		glTranslatef(0.0, 0.0, 0.075);
 		glPushMatrix();
@@ -372,11 +348,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		
 		// Primeiro braço
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		setMaterial(blueLightGrey, 96.0);
 		
 		glTranslatef(0.0, 0.0, 0.075);
 		glPushMatrix();
@@ -398,11 +370,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		
 		// Porca que segura os braços
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
 		
 		glTranslatef(0.0, 0.0, -0.075);
 		glPushMatrix();
@@ -412,11 +380,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();		
 		
 		// Segundo braço
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		setMaterial(blueLightGrey, 96.0);
 		
 		glTranslatef(0.0, 0.0, -0.075);
 		glPushMatrix();
@@ -437,11 +401,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCylinder(32);
 		glPopMatrix();
 		
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);	
+		setMaterial(darkGrey, 128.0);
 					
 		// Garra
 		glTranslatef(0.0, 0.0, 0.05);
@@ -451,11 +411,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCylinder(32);
 		glPopMatrix();
 		
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+		setMaterial(blueLightGrey, 96.0);
 		
 		glTranslatef(0.0, 0.2, 0.075);		
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
@@ -465,11 +421,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		glTranslatef(0.0, 0.1, 0.0);
 		
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
 		
 		// WHY
 		glPushMatrix();
@@ -507,12 +459,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCube();
 			glPopMatrix();	
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);		
-		
+			setMaterial(blueLightGrey, 96.0);
+			
 			glTranslatef(0.0, 0.15, 0.0);				
 			glPushMatrix();
 				glRotatef(90, 0.0, 0.0, 1.0);
@@ -520,11 +468,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCylinder(32);
 			glPopMatrix();
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+			setMaterial(darkGrey, 128.0);
 		
 			glRotatef(70, 1.0, 0.0, 0.0);
 			glTranslatef(0.0, 0.15, 0.0);	
@@ -535,11 +479,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 				
 		// Dedo 2
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
+		
 		glPushMatrix();
 			glTranslatef(-0.05, 0.0, 0.0);
 			glRotatef(fingerAng, 0.0, 0.0, 1.0);
@@ -549,11 +490,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCube();
 			glPopMatrix();	
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+			setMaterial(blueLightGrey, 96.0);
 		
 			glTranslatef(0.0, 0.15, 0.0);				
 			glPushMatrix();
@@ -562,11 +499,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCylinder(32);
 			glPopMatrix();
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+			setMaterial(darkGrey, 128.0);
 		
 			glRotatef(-70, 0.0, 0.0, 1.0);
 			glTranslatef(0.0, 0.15, 0.0);	
@@ -577,11 +510,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		
 		// Dedo 3
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
+		
 		glPushMatrix();
 			glTranslatef(0.0, 0.0, 0.05);
 			glRotatef(fingerAng, 1.0, 0.0, 0.0);
@@ -591,11 +521,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCube();
 			glPopMatrix();	
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
+			setMaterial(blueLightGrey, 96.0);
 		
 			glTranslatef(0.0, 0.15, 0.0);				
 			glPushMatrix();
@@ -604,11 +530,7 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCylinder(32);
 			glPopMatrix();
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+			setMaterial(darkGrey, 128.0);
 		
 			glRotatef(-70, 1.0, 0.0, 0.0);
 			glTranslatef(0.0, 0.15, 0.0);	
@@ -619,11 +541,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		glPopMatrix();
 		
 		// Dedo 4
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-		glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-		glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-		glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
+		setMaterial(darkGrey, 128.0);
+		
 		glPushMatrix();
 			glTranslatef(0.05, 0.0, 0.0);
 			glRotatef(-fingerAng, 0.0, 0.0, 1.0);
@@ -633,12 +552,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCube();
 			glPopMatrix();	
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, blueLightGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(blueLightGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, blueLightGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		
+			setMaterial(blueLightGrey, 96.0);
+					
 			glTranslatef(0.0, 0.15, 0.0);				
 			glPushMatrix();
 				glRotatef(90, 1.0, 0.0, 0.0);
@@ -646,12 +561,8 @@ void drawDAAAAACLAAAAAAAAAAW(){
 				drawUnitCylinder(32);
 			glPopMatrix();
 			
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, darkGrey);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(darkGrey));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, darkGrey); 
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);	  
-			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		
+			setMaterial(darkGrey, 128.0);	
+				
 			glRotatef(70, 0.0, 0.0, 1.0);
 			glTranslatef(0.0, 0.15, 0.0);	
 			glPushMatrix();
@@ -729,20 +640,8 @@ void drawCube(Cube* cube){
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
 		glRotatef(cube->rot[1], 0.0, 1.0, 0.0);
 		glRotatef(cube->rot[2], 0.0, 0.0, 1.0);
-		if(cube->caught){
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(green));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, green);
-			glMaterialfv(GL_FRONT, GL_EMISSION, weakGreen);
-			glMaterialf(GL_FRONT, GL_SHININESS, 32.0);
-		}
-		else{
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, cube->clr);
-			glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(cube->clr));
-			glMaterialfv(GL_FRONT, GL_SPECULAR, cube->clr);
-			glMaterialfv(GL_FRONT, GL_EMISSION, black);
-			glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-		}
+		if(cube->caught) setMaterial(white, 96.0);
+		else setMaterial(cube->clr, 128.0);
 		glutSolidCube(cube->size);
     glPopMatrix();
 }
@@ -755,28 +654,13 @@ void drawCubeArray(){
 
 void drawCatchSphere(){
 	glMatrixMode(GL_MODELVIEW);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(white));
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);
-	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
-	/*
-	glPushMatrix();
-		glTranslatef(catchPtDir[12], catchPtDir[13], catchPtDir[14]);
-		glutSolidSphere(0.03, 10, 10);
-	glPopMatrix();
-	glPushMatrix();
-		glTranslatef(catchPtEsq[12], catchPtEsq[13], catchPtEsq[14]);
-		glutSolidSphere(0.03, 10, 10);
-	glPopMatrix();
-	*/
+	setMaterial(white, 96.0);
 	glPushMatrix();
 		glTranslatef(catchPtCenter[12], catchPtCenter[13], catchPtCenter[14]);
-		glutSolidSphere(0.03, 10, 10);
 	glPopMatrix();
 }
 
-void setMaterial(GLfloat* color, GLfloat shininess){
+void setMaterial(GLfloat color[3], GLfloat shininess){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(color));
 	glMaterialfv(GL_FRONT, GL_SPECULAR, color);
@@ -786,7 +670,7 @@ void setMaterial(GLfloat* color, GLfloat shininess){
 
 void drawCollectBox(){
 	glMatrixMode(GL_MODELVIEW);
-	setMaterial(yellow, 64.0);
+	setMaterial(yellow, 96.0);
 	glPushMatrix();
 		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[0]+collectArea[1])/2);
 		glPushMatrix();
@@ -838,6 +722,8 @@ void display(){
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glTranslatef(0.0, 0.1, 0.0);
 		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
+		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
+		glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 
 		// Dedo 1
 		glPushMatrix();
@@ -860,6 +746,7 @@ void display(){
 		glPopMatrix();
 		for(int i = 0; i < 16; i++) catchPtCenter[i] = (catchPtDir[i]+catchPtEsq[i])/2.0;
     glPopMatrix();
+    
     glPushMatrix();
 		glLoadIdentity();
 		if(autocam) gluLookAt(catchPtWrist[12], 5.0, catchPtWrist[14], catchPtCenter[12], catchPtCenter[13], catchPtCenter[14], up[0], up[1], up[2]);
@@ -893,9 +780,8 @@ void idle(){
 	if(cubeLeft == 0){
 		totalCube += 2;
 		if(totalCube > maxCube){
-			end = clock();
-			end2 = time(NULL);
-			printf("Tempo total:\n%d clocks\n%.f segundos\n", (int)(end-start), difftime(end2, start2));
+			end = time(NULL);
+			printf("Tempo total:\n%.f segundos\n", difftime(end, start));
 			exit(0);
 		}
 		cubeLeft = totalCube;
@@ -1051,16 +937,29 @@ void keyInput(unsigned char key, int x, int y){
 	    	light3 = true;
 	    }
 	    break;
-    }
+	case '9':
+    	if(light0Intensity[0] < 1.0){
+    		light0Intensity[0] += 0.05;
+    		light0Intensity[1] += 0.05;
+    		light0Intensity[2] += 0.05;
+    	}
+    	break;
+	case '0':
+    	if(light0Intensity[0] > 0.0){
+    		light0Intensity[0] -= 0.05;
+    		light0Intensity[1] -= 0.05;
+    		light0Intensity[2] -= 0.05;
+    	}
+    	break;
+    }    
 }
 
 void lightConfig(){
 	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
 	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);	
 	glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);	
-	glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 100.0);
-	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 10.0);
-    glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
+	glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 500.0);
+	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30.0);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
@@ -1165,8 +1064,7 @@ int main(int argc, char** argv){
 	createCubeArray();
 	createCatchPt();
 
-	start = clock();
-	start2 = time(NULL);
+	start = time(NULL);
 	    
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
