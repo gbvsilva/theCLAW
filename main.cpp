@@ -87,7 +87,7 @@ unsigned char * data; // Dados da imagem de textura
 Cube** cubeArray;
 int totalCube = 1;
 int cubeLeft = 1;
-int maxCube = 1;
+int maxCube = 3;
 time_t start;
 time_t end;
 
@@ -809,7 +809,7 @@ void display(){
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glTranslatef(0.0, 0.1, 0.0);
 		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
-		//glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
+		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
 		//glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 
 		// Dedo 1
