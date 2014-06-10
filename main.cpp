@@ -7,9 +7,9 @@
 
 // ROBOT ARM CONTROLS
 GLfloat baseSpin = 0.0;        
-GLfloat shoulderAng = -20.0;  
-GLfloat elbowAng = -20.0;   
-GLfloat wristAng = -90.0;
+GLfloat shoulderAng = -22.5;  
+GLfloat elbowAng = -22.5;   
+GLfloat wristAng = -22.5;
 GLfloat wristRot = 0.0;
 GLfloat fingerAng = 45.0;
 GLfloat clawScale = 0.8;
@@ -29,15 +29,17 @@ GLfloat darkGrey[] = {0.25, 0.25, 0.25};
 GLfloat black[] = {0.0, 0.0, 0.0};
 
 GLfloat blueLightGrey[] = {0.7, 0.75, 0.85};
-GLfloat blueDarkGray[] = {0.25, 0.25, 0.5};
+GLfloat blueDarkGrey[] = {0.2, 0.25, 0.35};
 
 // CAMERA CONTROLS
-GLfloat eye[] = {0.0, 4.0, 4.0};
+GLfloat eye[] = {0.0, 6.0, 6.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
 GLfloat camRot[] = {0.0, 0.0};
 GLfloat shake[] = {0.0, 0.0, 0.0};
 bool autocam = false;
+bool autorotation = false;
+bool lighttest = false;
 
 // PHYSICS
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
@@ -64,6 +66,7 @@ bool light3 = false;
 // Luz 0: Difusa, acima do campo
 GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
 GLfloat light0Intensity[] = {1.0, 1.0, 1.0, 1.0};
+GLfloat light0Specular[] = {0.0, 0.0, 0.0, 1.0};
 // Luz 1: Ambiente
 GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
 GLfloat light1Intensity[] = {0.4, 0.4, 0.4, 1.0};
@@ -73,7 +76,7 @@ GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
 // Luz 3: Spot difusa, acoplada à garra. Parte difusa não funcionando
 GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light3Dir[] = {0.0, -1.0, 0.0};
+GLfloat light3Dir[] = {0.0, 1.0, 0.0};
 
 // TEXTURE
 GLuint wallTexture; // Identificador da textura atualmente em uso
@@ -96,7 +99,7 @@ void setMaterial(GLfloat[3], GLfloat);
 void drawUnitCylinder(int);
 void drawUnitCone(int);
 void drawUnitCube();
-void drawUnitSphere();
+void drawUnitSphere(int);
 void drawFloor();
 void drawWalls();
 void drawJoint(int);
@@ -119,8 +122,8 @@ void createCatchPt();
 void createCubeArray();
 int main(int, char**);
 
-GLfloat* ambLight(GLfloat* clr){
-	if(light1) return clr;
+GLfloat* ambLight(GLfloat* color){
+	if(light1) return color;
 	else return black;
 }
 
@@ -274,6 +277,70 @@ void drawWalls(){
     glPopMatrix();
 }
 
+void armDetails(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		setMaterial(blueDarkGrey, 96.0);
+		glTranslatef(0.0, 0.0, 0.0);
+		glPushMatrix();
+			glTranslatef(0.0, -0.25, 0.0);
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.15, 0.1);
+			drawUnitCylinder(32);
+		glPopMatrix();	
+		
+		glPushMatrix();			
+			glScalef(0.1, 0.5, 0.15);
+			drawUnitCube();
+		glPopMatrix();	
+		
+		glPushMatrix();
+			glTranslatef(0.0, 0.25, 0.0);
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.15, 0.1);
+			drawUnitCylinder(32);
+		glPopMatrix();
+	glPopMatrix();
+}
+
+void drawArmAxle(){
+	glMatrixMode(GL_MODELVIEW);
+	setMaterial(darkGrey, 128.0);
+	glPushMatrix();
+		glRotatef(90, 1.0, 0.0, 0.0);
+		glScalef(0.1, 0.3, 0.1);
+		drawUnitCylinder(6);
+	glPopMatrix();
+}
+
+void drawArm(GLfloat rotation){
+	glMatrixMode(GL_MODELVIEW);
+	setMaterial(blueLightGrey, 96.0);
+	glPushMatrix();
+		glRotatef(90, 1.0, 0.0, 0.0);
+		glScalef(0.2, 0.1, 0.2);
+		drawUnitCylinder(32);
+	glPopMatrix();	
+	glTranslatef(0.0, 0.4, 0.0);
+	glPushMatrix();
+		glScalef(0.2, 0.8, 0.1);
+		drawUnitCube();
+	glPopMatrix();
+	
+	// Detalhes do braço
+	armDetails();
+	
+	setMaterial(blueLightGrey, 96.0);
+	
+	glTranslatef(0.0, 0.4, 0.0);
+	glRotatef(rotation, 0.0, 0.0, 1.0);
+	glPushMatrix();
+		glRotatef(90, 1.0, 0.0, 0.0);
+		glScalef(0.2, 0.1, 0.2);
+		drawUnitCylinder(32);
+	glPopMatrix();
+}
+
 void drawDAAAAACLAAAAAAAAAAW(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -318,6 +385,12 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCube();
 		glPopMatrix();
 		glPushMatrix();			
+			glTranslatef(0.0, 0.05, 0.15);
+			glRotatef(20, 1.0, 0.0, 0.0);
+			glScalef(0.1, 0.1, 0.25);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();			
 			glScalef(0.5, 0.1, 0.5);
 			drawUnitCylinder(32);
 		glPopMatrix();		
@@ -329,6 +402,11 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			glScalef(0.2, 0.8, 0.1);
 			drawUnitCube();
 		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.05, 0.1);
+			glScalef(0.2, 0.6, 0.1);
+			drawUnitCube();
+		glPopMatrix();
 		glTranslatef(0.0, 0.4, 0.0);
 		glRotatef(shoulderAng, 0.0, 0.0, 1.0);
 		glPushMatrix();
@@ -337,74 +415,26 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCylinder(32);
 		glPopMatrix();
 		
-		// Porca que segura os braços
-		setMaterial(darkGrey, 128.0);
-		
+		// Porca que segura os braços	
 		glTranslatef(0.0, 0.0, 0.075);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.1, 0.3, 0.1);
-			drawUnitCylinder(6);
-		glPopMatrix();
+		drawArmAxle();
 		
-		// Primeiro braço
-		setMaterial(blueLightGrey, 96.0);
-		
+		// Primeiro braço	
 		glTranslatef(0.0, 0.0, 0.075);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.2, 0.1, 0.2);
-			drawUnitCylinder(32);
-		glPopMatrix();	
-		glTranslatef(0.0, 0.4, 0.0);
-		glPushMatrix();
-			glScalef(0.2, 0.8, 0.1);
-			drawUnitCube();
-		glPopMatrix();		
-		glTranslatef(0.0, 0.4, 0.0);
-		glRotatef(elbowAng, 0.0, 0.0, 1.0);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.2, 0.1, 0.2);
-			drawUnitCylinder(32);
-		glPopMatrix();
+		drawArm(elbowAng);
 		
 		// Porca que segura os braços
-		setMaterial(darkGrey, 128.0);
-		
 		glTranslatef(0.0, 0.0, -0.075);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.1, 0.3, 0.1);
-			drawUnitCylinder(6);
-		glPopMatrix();		
+		drawArmAxle();	
 		
-		// Segundo braço
-		setMaterial(blueLightGrey, 96.0);
-		
+		// Segundo braço		
 		glTranslatef(0.0, 0.0, -0.075);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.2, 0.1, 0.2);
-			drawUnitCylinder(32);
-		glPopMatrix();	
-		glTranslatef(0.0, 0.4, 0.0);
-		glPushMatrix();
-			glScalef(0.2, 0.8, 0.1);
-			drawUnitCube();
-		glPopMatrix();				
-		glTranslatef(0.0, 0.4, 0.0);
-		glRotatef(wristAng, 0.0, 0.0, 1.0);
-		glPushMatrix();
-			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.2, 0.1, 0.2);
-			drawUnitCylinder(32);
-		glPopMatrix();
-		
+		drawArm(wristAng);
+				
 		setMaterial(darkGrey, 128.0);
 					
 		// Garra
-		glTranslatef(0.0, 0.0, 0.05);
+		glTranslatef(0.0, 0.0, 0.075);
 		glPushMatrix();
 			glRotatef(90, 1.0, 0.0, 0.0);
 			glScalef(0.15, 0.3, 0.15);
@@ -413,10 +443,10 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		
 		setMaterial(blueLightGrey, 96.0);
 		
-		glTranslatef(0.0, 0.2, 0.075);		
+		glTranslatef(0.0, 0.25, 0.075);		
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glPushMatrix();
-			glScalef(0.15, 0.4, 0.15);
+			glScalef(0.15, 0.5, 0.15);
 			drawUnitCylinder(32);
 		glPopMatrix();
 		glTranslatef(0.0, 0.1, 0.0);
@@ -425,27 +455,55 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		
 		// WHY
 		glPushMatrix();
-			glRotatef(-wristRot*2+22.5, 0.0, 1.0, 0.0);
+			glRotatef(-wristRot*2+45, 0.0, 1.0, 0.0);
 			glPushMatrix();			
 				glTranslatef(0.0, -0.05, 0.0);
 				glRotatef(90, 1.0, 0.0, 0.0);
-				glScalef(0.05, 0.5, 0.05);
+				glScalef(0.05, 0.2, 0.05);
 				drawUnitCube();
 			glPopMatrix();
-			glRotatef(-wristRot*2+67.5, 0.0, 1.0, 0.0);
+			glPushMatrix();			
+				glTranslatef(0.0, -0.05, 0.0);
+				glRotatef(90, 0.0, 0.0, 1.0);
+				glScalef(0.05, 0.2, 0.05);
+				drawUnitCube();
+			glPopMatrix();
 			glPushMatrix();
 				glTranslatef(0.0, -0.15, 0.0);
 				glRotatef(90, 1.0, 0.0, 0.0);
-				glScalef(0.05, 0.5, 0.05);
+				glScalef(0.05, 0.2, 0.05);
+				drawUnitCube();
+			glPopMatrix();
+			glPushMatrix();
+				glTranslatef(0.0, -0.15, 0.0);
+				glRotatef(90, 0.0, 0.0, 1.0);
+				glScalef(0.05, 0.2, 0.05);
 				drawUnitCube();
 			glPopMatrix();
 		glPopMatrix();
 		
 		glPushMatrix();
-			glRotatef(45, 0.0, 1.0, 0.0);
 			glTranslatef(0.0, -0.1, 0.0);
 			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.05, 0.5, 0.05);
+			glScalef(0.05, 0.2, 0.05);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.1, 0.0);
+			glRotatef(90, 0.0, 0.0, 1.0);
+			glScalef(0.05, 0.2, 0.05);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.2, 0.0);
+			glRotatef(90, 1.0, 0.0, 0.0);
+			glScalef(0.05, 0.2, 0.05);
+			drawUnitCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, -0.2, 0.0);
+			glRotatef(90, 0.0, 0.0, 1.0);
+			glScalef(0.05, 0.2, 0.05);
 			drawUnitCube();
 		glPopMatrix();
 		
@@ -621,7 +679,7 @@ void drawCube(Cube* cube){
      			}
       		}
       		if(!collision){
-      			if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.01;
+      			if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.1;
       			else if(cube->pos[1] < cube->size/2.0){
       				cube->pos[1] = 0.1;
       				if(
@@ -654,9 +712,10 @@ void drawCubeArray(){
 
 void drawCatchSphere(){
 	glMatrixMode(GL_MODELVIEW);
-	setMaterial(white, 96.0);
+	setMaterial(red, 96.0);
 	glPushMatrix();
 		glTranslatef(catchPtCenter[12], catchPtCenter[13], catchPtCenter[14]);
+		glutSolidSphere(0.02*clawScale, 16, 16);
 	glPopMatrix();
 }
 
@@ -666,6 +725,34 @@ void setMaterial(GLfloat color[3], GLfloat shininess){
 	glMaterialfv(GL_FRONT, GL_SPECULAR, color);
 	glMaterialfv(GL_FRONT, GL_EMISSION, black);
 	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+}
+
+void drawPost(GLfloat height){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();	
+		setMaterial(yellow, 32.0);
+		glTranslatef(0.0, height/4, 0.0);
+		glScalef(0.3, 0.3, 0.3);
+		drawUnitSphere(32);
+		
+		setMaterial(darkGrey, 96.0);
+		glTranslatef(0.0, -height/2, 0.0);
+		glScalef(0.3, height, 0.3);
+		drawUnitCylinder(32);
+	glPopMatrix();
+}
+
+void drawPostGroup(){
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		glTranslatef(2.0, 0.0, 2.0);
+		for(int i = 0; i < 9; i++){
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, -i*0.5);
+				drawPost(2.0+i*0.5);
+			glPopMatrix();		
+		}
+	glPopMatrix();
 }
 
 void drawCollectBox(){
@@ -722,8 +809,8 @@ void display(){
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glTranslatef(0.0, 0.1, 0.0);
 		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
-		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
-		glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
+		//glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
+		//glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 
 		// Dedo 1
 		glPushMatrix();
@@ -749,8 +836,14 @@ void display(){
     
     glPushMatrix();
 		glLoadIdentity();
-		if(autocam) gluLookAt(catchPtWrist[12], 5.0, catchPtWrist[14], catchPtCenter[12], catchPtCenter[13], catchPtCenter[14], up[0], up[1], up[2]);
-		else gluLookAt(eye[0]+shake[0], eye[1]+shake[1], eye[2]+shake[2], center[0], center[1], center[2], up[0], up[1], up[2]);		
+		if(autocam) gluLookAt(
+			catchPtWrist[12], 5.0, catchPtWrist[14],
+			catchPtCenter[12], catchPtCenter[13], catchPtCenter[14],
+			up[0], up[1], up[2]);
+		else gluLookAt(
+			eye[0]+shake[0], eye[1]+shake[1],
+			eye[2]+shake[2], center[0], center[1],
+			center[2], up[0], up[1], up[2]);		
 		glRotatef(camRot[1], 1, 0, 0);
 		glRotatef(camRot[0], 0, 1, 0);
 		drawFloor();
@@ -759,6 +852,7 @@ void display(){
 		drawCubeArray();
 		drawCollectBox();
 		drawCatchSphere();
+		if(lighttest) drawPostGroup();
     glPopMatrix();	
     
     glutSwapBuffers();
@@ -777,6 +871,10 @@ void idle(){
 	shake[1] = 0;
 	shake[2] = 0;
 	lightConfig();
+	if(autorotation){
+		camRot[0] += 0.5;
+		if(camRot[0] > 360.0) camRot[0] -= 360.0;
+	}
 	if(cubeLeft == 0){
 		totalCube += 2;
 		if(totalCube > maxCube){
@@ -874,18 +972,22 @@ void keyInput(unsigned char key, int x, int y){
 		if(camRot[0] < -360.0) camRot[0] += 360.0;
 	    break;
 	case 'c':
-	    if(!autocam) camRot[1] += 5;
-		if(camRot[1] > 360.0) camRot[0] -= 360.0;
+	    if(!autocam && camRot[1] < 90.0) camRot[1] += 5;
 	    break;
 	case 'v':
-	    if(!autocam) camRot[1] -= 5;
-	    if(camRot[1] < -360.0) camRot[0] += 360.0;
+	    if(!autocam && camRot[1] > -90.0) camRot[1] -= 5;
 	    break;
 	case 'e':
-	    if(!autocam) eye[2] += 0.1;
+	    if(!autocam){
+	    	eye[1] += 0.1;
+	    	eye[2] += 0.1;
+	    }
 	    break;
 	case 'd':
-	    if(!autocam) eye[2] -= 0.1;
+	    if(!autocam){
+	    	eye[1] -= 0.1;
+	    	eye[2] -= 0.1;
+	    }
 	    break;
 	case 'm':
 	    if(autocam) autocam = false;
@@ -893,6 +995,20 @@ void keyInput(unsigned char key, int x, int y){
 	    	autocam = true;
 	    	camRot[0] = 0;
 	    	camRot[1] = 0;
+	    }	    	
+	    break;
+	case 'n':
+	    if(autorotation){
+	    	autorotation = false;
+	    	light0Intensity[0] = 1.0;	
+	    	light0Intensity[1] = 1.0;	
+	    	light0Intensity[2] = 1.0;	
+	    }
+	    else{
+	    	autorotation = true;	    	
+	    	light0Intensity[0] = 0.2;	
+	    	light0Intensity[1] = 0.2;	
+	    	light0Intensity[2] = 0.2;
 	    }	    	
 	    break;
 	// LIGHTING CONTROLS
@@ -937,6 +1053,10 @@ void keyInput(unsigned char key, int x, int y){
 	    	light3 = true;
 	    }
 	    break;
+	case '8':
+	    if(lighttest) lighttest = false;
+	    else lighttest = true;
+	    break;	    
 	case '9':
     	if(light0Intensity[0] < 1.0){
     		light0Intensity[0] += 0.05;
@@ -958,12 +1078,13 @@ void lightConfig(){
 	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
 	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);	
 	glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);	
-	glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 500.0);
-	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30.0);
+	//glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 200.0);
+	//glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30.0);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light0Specular);
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
-	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);	
+	//glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);	
 }
 
 void createCubeArray(){
@@ -973,7 +1094,7 @@ void createCubeArray(){
     for(int i = 0; i < totalCube; i++){
     	cubeArray[i] = new Cube(0.2);
     	cubeArray[i]->pos[0] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
-    	cubeArray[i]->pos[1] = 0.3 + (GLfloat)(rand()%10)/5;
+    	cubeArray[i]->pos[1] = 5.0 + (GLfloat)(rand()%6);
     	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
     	cubeArray[i]->clr[0] = (GLfloat)(rand()%6)/10.0;
     	cubeArray[i]->clr[1] = (GLfloat)(rand()%6)/10.0;
@@ -1059,13 +1180,33 @@ GLuint loadBMP(const char * path)
 	return id; // Retornando o id para poder posteriormente usar a textura na hora de desenhar
 }
 
+int init(int argc, char** argv){
+	if(argc > 1){
+		autorotation = true;
+		baseSpin = 45.0;
+		glEnable(GL_LIGHT2);
+		light2 = true;
+    	if(atoi(argv[1]) == 1){			
+			glEnable(GL_LIGHT0);
+			light0 = true;
+			light0Intensity[0] = 0.2;	
+			light0Intensity[1] = 0.2;	
+			light0Intensity[2] = 0.2;
+		}
+	}
+	else{
+		glEnable(GL_LIGHT0);
+		light0 = true;
+	}
+}
+
 int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();
 	createCatchPt();
 
-	start = time(NULL);
-	    
+	start = time(NULL);	
+			
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(512,512);
@@ -1078,12 +1219,14 @@ int main(int argc, char** argv){
     glEnable(GL_LIGHTING);
     glEnable(GL_LINE_SMOOTH);	
     glEnable(GL_TEXTURE_2D);
-	wallTexture = loadBMP("text_wall.bmp");
+    wallTexture = loadBMP("text_wall.bmp");	
     glDisable(GL_LIGHT0);
     glDisable(GL_LIGHT1);
     glDisable(GL_LIGHT2);
-    glDisable(GL_LIGHT3);
-    	
+    glDisable(GL_LIGHT3);  
+    
+    init(argc, argv);  
+    
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutIdleFunc(idle);
