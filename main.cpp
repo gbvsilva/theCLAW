@@ -41,6 +41,10 @@ bool autocam = false;
 bool autorotation = false;
 bool lighttest = false;
 
+// Frustum attributes
+GLfloat fovy = 30.0, aspect = (float) 512/512, zNear = 0.01, zFar = 50.0;
+bool culling=false;
+
 // PHYSICS
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
@@ -57,7 +61,7 @@ GLfloat gridSize = 0.5;
 GLfloat wallSize = 1;
 GLfloat collectArea[] = {0.4, 1.0, 0.4, 1.0};
 
-bool asd = true;
+bool asd = true; // O que significa isso?
 // LIGHT
 bool light0 = false;
 bool light1 = false;
@@ -94,6 +98,7 @@ time_t end;
 // PROTÓTIPOS
 void lightConfig();
 GLuint loadBMP(const char*);
+void visible(float x, float y, float z, float w, char code[6]);
 GLfloat ambLight(GLfloat);
 void setMaterial(GLfloat[3], GLfloat);
 void drawUnitCylinder(int);
@@ -706,7 +711,21 @@ void drawCube(Cube* cube){
 
 void drawCubeArray(){
 	for(int i = 0; i < totalCube; i++){
-		if(cubeArray[i]->type != 0) drawCube(cubeArray[i]);
+		if(cubeArray[i]->type != 0) {
+			// Analisando se o cubo esta dentro do campo de visao (frustum)
+			char code[6] = {'0','0','0','0','0','0'};
+			// Algoritmo Cohen-Sutherland
+			if(culling)
+				visible(cubeArray[i]->pos[0],cubeArray[i]->pos[1],cubeArray[i]->pos[2], 1.0, code);
+			
+			// Se esta dentro do frustum, desenha.
+			if(code[0] != '1' && code[1] != '1' && code[2] != '1' && code[3] != '1' && code[4] != '1' && code[5] != '1') {
+				drawCube(cubeArray[i]);
+				printf("Cubo Desenhado!\n");
+			}else {
+				printf("Cubo Nao Desenhado!\n");
+			}
+		}
 	}
 }
 
@@ -863,7 +882,7 @@ void reshape(int w, int h){
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(30.0, (float)w/h, 0.01, 50.0);
+    gluPerspective(fovy, (float)w/h, zNear, zFar);
 }
 
 void idle(){
@@ -871,7 +890,7 @@ void idle(){
 	shake[1] = 0;
 	shake[2] = 0;
 	lightConfig();
-	if(autorotation){
+	if(autorotation){	
 		camRot[0] += 0.5;
 		if(camRot[0] > 360.0) camRot[0] -= 360.0;
 	}
@@ -1071,6 +1090,9 @@ void keyInput(unsigned char key, int x, int y){
     		light0Intensity[2] -= 0.05;
     	}
     	break;
+    case '*':
+    	culling=true;
+    	break;
     }    
 }
 
@@ -1200,6 +1222,41 @@ int init(int argc, char** argv){
 	}
 }
 
+/* Testa se as coordenadas do ponto passadas como parametro estao dentro do frustum. */
+void visible(float x, float y, float z, float w, char code[6])
+{
+	float xc, yc, zc, wc; // Coordenadas do ponto em coordenadas nao normalizadas
+	float m[16], p[16]; // Matrizes de visao e de projecao;
+
+	glGetFloatv(GL_PROJECTION_MATRIX, p);
+	glGetFloatv(GL_MODELVIEW_MATRIX, m);
+
+	/* Multiplicando as duas matrizes */
+	glPushMatrix();
+
+	glLoadMatrixf(p);
+	glMultMatrixf(m);
+	float res[16]; // Matriz para guardar o resultado da multiplicacao feita acima
+	glGetFloatv(GL_MODELVIEW_MATRIX, res);
+
+	glPopMatrix();
+
+	// Calculando as coordenadas nao normalizadas
+	xc = x*res[0] + y*res[4] + z*res[8] + res[12];
+	yc = x*res[1] + y*res[5] + z*res[9] + res[13];
+	zc = x*res[2] + y*res[6] + z*res[10] + res[14];
+	wc = x*res[3] + y*res[7] + z*res[11] + res[15];
+
+
+	/* Cohen-Sutherland */
+	if(xc < -wc) code[0] = '1'; // fora do plano esquerdo do frustum
+	if(xc > wc) code[1] = '1'; // fora do plano direito do frustum
+	if(yc < -wc) code[2] = '1'; // fora do plano inferior do frustum
+	if(yc > wc) code[3] = '1'; // fora do plano superior do frustum
+	if(zc < -wc) code[4] = '1'; // fora do plano near do frustum
+	if(zc > wc) code[5] = '1'; // fora do plano far do frustum
+}
+
 int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();
@@ -1224,7 +1281,7 @@ int main(int argc, char** argv){
     glDisable(GL_LIGHT1);
     glDisable(GL_LIGHT2);
     glDisable(GL_LIGHT3);  
-    
+	
     init(argc, argv);  
     
     glutDisplayFunc(display);
