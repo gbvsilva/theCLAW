@@ -4,130 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "obj.h"
-
-// ROBOT ARM CONTROLS
-GLfloat baseSpin = 0.0;        
-GLfloat shoulderAng = -22.5;  
-GLfloat elbowAng = -22.5;   
-GLfloat wristAng = -22.5;
-GLfloat wristRot = 0.0;
-GLfloat fingerAng = 45.0;
-GLfloat clawScale = 0.8; // Variação de escala da garra
-
-// ROBOT COLORS
-GLfloat red[] = {1.0, 0, 0};
-GLfloat green[] = {0, 1.0, 0};
-GLfloat weakGreen[] = {0, 0.2, 0};
-GLfloat blue[] = {0, 0, 1.0};
-GLfloat yellow[] = {1.0, 1.0, 0};
-GLfloat darkYellow[] = {0.25, 0.25, 0};
-GLfloat purple[] = {1.0, 0, 1.0};
-GLfloat white[] = {1.0, 1.0, 1.0};
-GLfloat grey[] = {0.5, 0.5, 0.5};
-GLfloat lightGrey[] = {0.75, 0.75, 0.75};
-GLfloat darkGrey[] = {0.25, 0.25, 0.25};
-GLfloat black[] = {0.0, 0.0, 0.0};
-GLfloat blueLightGrey[] = {0.7, 0.75, 0.85};
-GLfloat blueDarkGrey[] = {0.2, 0.25, 0.35};
-
-// CAMERA CONTROLS
-GLfloat eye[] = {0.0, 6.0, 6.0};
-GLfloat center[] = {0.0, 1.0, 0.0};
-GLfloat up[] = {0.0, 1.0, 0.0};
-GLfloat camRot[] = {0.0, 0.0}; // Rotação da câmera nos eixos Y e X
-GLfloat shake[] = {0.0, 0.0, 0.0}; // Vetor do screenshake
-bool autocam = false; //Switch da câmera em terceira pessoa
-bool autorotation = false; //Switch da autorotação
-bool lighttest = false; //Switch dos postes de teste
-
-// Frustum attributes
-GLfloat fovy = 30.0;
-GLfloat aspect = (float) 512/512;
-GLfloat zNear = 0.01;
-GLfloat zFar = 50.0;
-bool culling = false; //Switch do frustum
-
-// PHYSICS
-GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
-GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
-GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
-GLfloat* catchPtWrist = (GLfloat*)malloc(sizeof(GLint)*16);
-bool clawSwitch = false; //Switch da captura da garra
-bool caught = false; //Se algum objeto foi capturado
-bool collision = false; //Se houve colisão
-
-// CLAW AREA
-GLfloat floorSize = 2.5; // Largura do piso
-GLfloat gridSize = 0.5; // Tamanho de cada grid do chão. Não utilizado
-GLfloat wallSize = 1; // Tamanho da parede
-GLfloat collectArea[] = {0.6, 1.2, -0.3, 0.3}; // Área de coleta de blocos. {p1x, p2x, p1y, p2y}
-
-// LIGHT
-// Switches de luz
-bool light0 = false;
-bool light1 = false;
-bool light2 = false;
-bool light3 = false;
-// Luz 0: Difusa, acima do campo
-GLfloat light0Pos[] = {0.0, 2.0, 0.0, 1.0};
-GLfloat light0Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light0Specular[] = {0.0, 0.0, 0.0, 1.0};
-// Luz 1: Ambiente
-GLfloat light1Pos[] = {0.0, 0.0, 0.0, 0.0};
-GLfloat light1Intensity[] = {0.4, 0.4, 0.4, 1.0};
-// Luz 2: Especular, câmera
-GLfloat light2Pos[] = {0, floorSize, floorSize, 1.0};
-GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
-// Luz 3: Spot difusa, acoplada à garra. Parte difusa não funcionando
-GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
-GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light3Dir[] = {0.0, -1.0, 0.0};
-
-// TEXTURE
-GLuint wallTexture; // Identificador da textura atualmente em uso
-unsigned int width, height; // Altura x Largura da imagem de textura
-unsigned char * data; // Dados da imagem de textura
-
-// OBJECT LIST
-Cube** cubeArray; // Array com os cubos
-int totalCube = 1; // Quantidade total de cubos daquele nível
-int cubeLeft = 1; // Quantidade restante de cubos
-int maxLevel = 2; // Quantidade máxima de níveis
-int cubeIncrease = 2; // Quantidade de cubos adicionados por nível
-time_t start; // Tempo de início
-time_t end; // Tempo de término
-
-// PROTÓTIPOS
-GLuint loadBMP(const char*);
-GLfloat ambLight(GLfloat);
-void lightConfig();
-void visible(float x, float y, float z, float w, char code[6]);
-void setMaterial(GLfloat[3], GLfloat);
-void drawUnitCylinder(int);
-void drawUnitCone(int);
-void drawUnitCube();
-void drawUnitSphere(int);
-void drawFloor();
-void drawWalls();
-void drawJoint(int);
-void drawJoint2(int);
-void drawBase(int);
-void drawArmSegment(int);
-void drawWrist(int);
-void drawFingerBase(int);
-void drawFingerTip(int);
-void drawRobotArm(int);
-void drawCube(Cube*);
-void drawCubeArray();
-void drawCatchSphere();
-void display();
-void reshape();
-void idle();
-void keyInput();
-void lightConfig();
-void createCatchPt();
-void createCubeArray();
-int main(int, char**);
+#include "main.h"
 
 // Caso a luz ambiente esteja desligada, a cor de GL_AMBIENT vai ser preta.
 GLfloat* ambLight(GLfloat* color){
@@ -389,7 +266,7 @@ void drawFinger(){
 }
 
 // Desenho principal da garra
-void drawDAAAAACLAAAAAAAAAAW(){
+void drawTHEClaw(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 		// Base
@@ -482,10 +359,10 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		setMaterial(darkGrey, 128.0);
 					
 		// Garra
-		glTranslatef(0.0, 0.0, 0.075);
+		glTranslatef(0.0, 0.0, 0.1);
 		glPushMatrix();
 			glRotatef(90, 1.0, 0.0, 0.0);
-			glScalef(0.15, 0.3, 0.15);
+			glScalef(0.15, 0.35, 0.15);
 			drawUnitCylinder(32);
 		glPopMatrix();
 		
@@ -686,7 +563,7 @@ void drawPost(GLfloat height){
 		glScalef(0.3, 0.3, 0.3);
 		drawUnitSphere(32);
 		
-		setMaterial(darkGrey, 96.0);
+		setMaterial(darkGrey, 32.0);
 		glTranslatef(0.0, -height/2, 0.0);
 		glScalef(0.3, height, 0.3);
 		drawUnitCylinder(32);
@@ -710,7 +587,7 @@ void drawPostGroup(){
 // Desenha a caixa de coleta
 void drawCollectBox(){
 	glMatrixMode(GL_MODELVIEW);
-	setMaterial(yellow, 0.0);
+	setMaterial(yellow, 32.0);
 	glPushMatrix();
 		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[2]+collectArea[3])/2);
 		glPushMatrix();
@@ -757,7 +634,7 @@ void updateCatchPt(){
 		glRotatef(wristAng, 0.0, 0.0, 1.0);
 					
 		// Garra
-		glTranslatef(0.0, 0.2, 0.125);	
+		glTranslatef(0.0, 0.2, 0.175);	
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glTranslatef(0.0, 0.1, 0.0);
 		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
@@ -818,7 +695,7 @@ void display(){
 		glRotatef(camRot[0], 0, 1, 0);
 		drawFloor();
 		drawWalls();
-		drawDAAAAACLAAAAAAAAAAW();
+		drawTHEClaw();
 		drawAim();
 		drawCubeArray();
 		drawCollectBox();
@@ -1231,7 +1108,7 @@ int main(int argc, char** argv){
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(512,512);
     glutInitWindowPosition(180,100);
-    glutCreateWindow("DAAAAAAA CLAAAAAAAAW");
+    glutCreateWindow("~~< the CLAW >~~");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
