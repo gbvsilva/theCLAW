@@ -6,7 +6,8 @@ class Obj{
 	public:
 	GLfloat pos[3];
 	GLfloat rot[3];
-	GLfloat clr[3];	
+	GLfloat clr[3];
+	GLfloat spd;
 	bool caught;
 	Obj();
 };

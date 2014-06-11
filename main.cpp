@@ -12,7 +12,7 @@ GLfloat elbowAng = -22.5;
 GLfloat wristAng = -22.5;
 GLfloat wristRot = 0.0;
 GLfloat fingerAng = 45.0;
-GLfloat clawScale = 0.8;
+GLfloat clawScale = 0.8; // Variação de escala da garra
 
 // ROBOT COLORS
 GLfloat red[] = {1.0, 0, 0};
@@ -27,7 +27,6 @@ GLfloat grey[] = {0.5, 0.5, 0.5};
 GLfloat lightGrey[] = {0.75, 0.75, 0.75};
 GLfloat darkGrey[] = {0.25, 0.25, 0.25};
 GLfloat black[] = {0.0, 0.0, 0.0};
-
 GLfloat blueLightGrey[] = {0.7, 0.75, 0.85};
 GLfloat blueDarkGrey[] = {0.2, 0.25, 0.35};
 
@@ -35,34 +34,36 @@ GLfloat blueDarkGrey[] = {0.2, 0.25, 0.35};
 GLfloat eye[] = {0.0, 6.0, 6.0};
 GLfloat center[] = {0.0, 1.0, 0.0};
 GLfloat up[] = {0.0, 1.0, 0.0};
-GLfloat camRot[] = {0.0, 0.0};
-GLfloat shake[] = {0.0, 0.0, 0.0};
-bool autocam = false;
-bool autorotation = false;
-bool lighttest = false;
+GLfloat camRot[] = {0.0, 0.0}; // Rotação da câmera nos eixos Y e X
+GLfloat shake[] = {0.0, 0.0, 0.0}; // Vetor do screenshake
+bool autocam = false; //Switch da câmera em terceira pessoa
+bool autorotation = false; //Switch da autorotação
+bool lighttest = false; //Switch dos postes de teste
 
 // Frustum attributes
-GLfloat fovy = 30.0, aspect = (float) 512/512, zNear = 0.01, zFar = 50.0;
-bool culling=false;
+GLfloat fovy = 30.0;
+GLfloat aspect = (float) 512/512;
+GLfloat zNear = 0.01;
+GLfloat zFar = 50.0;
+bool culling = false; //Switch do frustum
 
 // PHYSICS
 GLfloat* catchPtDir = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtEsq = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtCenter = (GLfloat*)malloc(sizeof(GLint)*16);
 GLfloat* catchPtWrist = (GLfloat*)malloc(sizeof(GLint)*16);
-bool clawSwitch = false;
-bool caught = false;
-bool collision = false;
-bool textureSwitch = false;
+bool clawSwitch = false; //Switch da captura da garra
+bool caught = false; //Se algum objeto foi capturado
+bool collision = false; //Se houve colisão
 
 // CLAW AREA
-GLfloat floorSize = 2.5;
-GLfloat gridSize = 0.5;
-GLfloat wallSize = 1;
-GLfloat collectArea[] = {0.4, 1.0, 0.4, 1.0};
+GLfloat floorSize = 2.5; // Largura do piso
+GLfloat gridSize = 0.5; // Tamanho de cada grid do chão. Não utilizado
+GLfloat wallSize = 1; // Tamanho da parede
+GLfloat collectArea[] = {0.6, 1.2, -0.3, 0.3}; // Área de coleta de blocos. {p1x, p2x, p1y, p2y}
 
-bool asd = true; // O que significa isso?
 // LIGHT
+// Switches de luz
 bool light0 = false;
 bool light1 = false;
 bool light2 = false;
@@ -80,7 +81,7 @@ GLfloat light2Intensity[] = {1.0, 1.0, 1.0, 1.0};
 // Luz 3: Spot difusa, acoplada à garra. Parte difusa não funcionando
 GLfloat light3Pos[] = {0.0, 0.0, 0.0, 1.0};
 GLfloat light3Intensity[] = {1.0, 1.0, 1.0, 1.0};
-GLfloat light3Dir[] = {0.0, 1.0, 0.0};
+GLfloat light3Dir[] = {0.0, -1.0, 0.0};
 
 // TEXTURE
 GLuint wallTexture; // Identificador da textura atualmente em uso
@@ -88,18 +89,19 @@ unsigned int width, height; // Altura x Largura da imagem de textura
 unsigned char * data; // Dados da imagem de textura
 
 // OBJECT LIST
-Cube** cubeArray;
-int totalCube = 1;
-int cubeLeft = 1;
-int maxCube = 3;
-time_t start;
-time_t end;
+Cube** cubeArray; // Array com os cubos
+int totalCube = 1; // Quantidade total de cubos daquele nível
+int cubeLeft = 1; // Quantidade restante de cubos
+int maxLevel = 2; // Quantidade máxima de níveis
+int cubeIncrease = 2; // Quantidade de cubos adicionados por nível
+time_t start; // Tempo de início
+time_t end; // Tempo de término
 
 // PROTÓTIPOS
-void lightConfig();
 GLuint loadBMP(const char*);
-void visible(float x, float y, float z, float w, char code[6]);
 GLfloat ambLight(GLfloat);
+void lightConfig();
+void visible(float x, float y, float z, float w, char code[6]);
 void setMaterial(GLfloat[3], GLfloat);
 void drawUnitCylinder(int);
 void drawUnitCone(int);
@@ -127,11 +129,13 @@ void createCatchPt();
 void createCubeArray();
 int main(int, char**);
 
+// Caso a luz ambiente esteja desligada, a cor de GL_AMBIENT vai ser preta.
 GLfloat* ambLight(GLfloat* color){
 	if(light1) return color;
 	else return black;
 }
 
+// Desenha um cubo de tamanho 1
 void drawUnitCube(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -139,6 +143,7 @@ void drawUnitCube(){
 	glPopMatrix();
 }
 
+// Desenha um cilindro de tamanho 1
 void drawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
 {
     int i;
@@ -194,6 +199,7 @@ void drawUnitCylinder(int NumSegs)  // x,y,z in [0,1], Y-axis is up
     delete[] Py;
 }
 
+// Desenha uma esfera de tamanho 1
 void drawUnitSphere(int NumSegs)  // x,y,z in [0,1]
 {
     glMatrixMode(GL_MODELVIEW);
@@ -202,6 +208,7 @@ void drawUnitSphere(int NumSegs)  // x,y,z in [0,1]
     glPopMatrix();
 }
 
+// Desenha o piso do nível
 void drawFloor(){
     setMaterial(white, 128.0);
 	
@@ -282,6 +289,7 @@ void drawWalls(){
     glPopMatrix();
 }
 
+// Detalhes laterais dos braços
 void armDetails(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -308,6 +316,7 @@ void armDetails(){
 	glPopMatrix();
 }
 
+// Eixo dos braços
 void drawArmAxle(){
 	glMatrixMode(GL_MODELVIEW);
 	setMaterial(darkGrey, 128.0);
@@ -318,6 +327,7 @@ void drawArmAxle(){
 	glPopMatrix();
 }
 
+// Desenho do braço
 void drawArm(GLfloat rotation){
 	glMatrixMode(GL_MODELVIEW);
 	setMaterial(blueLightGrey, 96.0);
@@ -346,6 +356,39 @@ void drawArm(GLfloat rotation){
 	glPopMatrix();
 }
 
+// Desenho do dedo
+void drawFinger(){
+	setMaterial(darkGrey, 128.0);
+	glPushMatrix();
+		glTranslatef(0.0, 0.0, -0.05);
+		glRotatef(-fingerAng, 1.0, 0.0, 0.0);
+		glTranslatef(0.0, 0.15, 0.0);
+		glPushMatrix();
+			glScalef(0.05, 0.3, 0.05);
+			drawUnitCube();
+		glPopMatrix();	
+		
+		setMaterial(blueLightGrey, 96.0);
+		
+		glTranslatef(0.0, 0.15, 0.0);				
+		glPushMatrix();
+			glRotatef(90, 0.0, 0.0, 1.0);
+			glScalef(0.1, 0.1, 0.1);
+			drawUnitCylinder(32);
+		glPopMatrix();
+		
+		setMaterial(darkGrey, 128.0);
+	
+		glRotatef(70, 1.0, 0.0, 0.0);
+		glTranslatef(0.0, 0.15, 0.0);	
+		glPushMatrix();
+			glScalef(0.05, 0.3, 0.05);
+			drawUnitCube();
+		glPopMatrix();			
+	glPopMatrix();
+}
+
+// Desenho principal da garra
 void drawDAAAAACLAAAAAAAAAAW(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -448,17 +491,17 @@ void drawDAAAAACLAAAAAAAAAAW(){
 		
 		setMaterial(blueLightGrey, 96.0);
 		
-		glTranslatef(0.0, 0.25, 0.075);		
+		glTranslatef(0.0, 0.225, 0.075);		
 		glRotatef(wristRot, 0.0, 1.0, 0.0);
 		glPushMatrix();
-			glScalef(0.15, 0.5, 0.15);
+			glScalef(0.15, 0.4, 0.15);
 			drawUnitCylinder(32);
 		glPopMatrix();
 		glTranslatef(0.0, 0.1, 0.0);
 		
 		setMaterial(darkGrey, 128.0);
 		
-		// WHY
+		// WHY - enfeite inútil
 		glPushMatrix();
 			glRotatef(-wristRot*2+45, 0.0, 1.0, 0.0);
 			glPushMatrix();			
@@ -512,130 +555,18 @@ void drawDAAAAACLAAAAAAAAAAW(){
 			drawUnitCube();
 		glPopMatrix();
 		
-		// Dedo 1
-		glPushMatrix();
-			glTranslatef(0.0, 0.0, -0.05);
-			glRotatef(-fingerAng, 1.0, 0.0, 0.0);
-			glTranslatef(0.0, 0.15, 0.0);
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();	
-			
-			setMaterial(blueLightGrey, 96.0);
-			
-			glTranslatef(0.0, 0.15, 0.0);				
-			glPushMatrix();
-				glRotatef(90, 0.0, 0.0, 1.0);
-				glScalef(0.1, 0.1, 0.1);
-				drawUnitCylinder(32);
-			glPopMatrix();
-			
-			setMaterial(darkGrey, 128.0);
-		
-			glRotatef(70, 1.0, 0.0, 0.0);
-			glTranslatef(0.0, 0.15, 0.0);	
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();			
-		glPopMatrix();
-				
-		// Dedo 2
-		setMaterial(darkGrey, 128.0);
-		
-		glPushMatrix();
-			glTranslatef(-0.05, 0.0, 0.0);
-			glRotatef(fingerAng, 0.0, 0.0, 1.0);
-			glTranslatef(0.0, 0.15, 0.0);
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();	
-			
-			setMaterial(blueLightGrey, 96.0);
-		
-			glTranslatef(0.0, 0.15, 0.0);				
-			glPushMatrix();
-				glRotatef(90, 1.0, 0.0, 0.0);
-				glScalef(0.1, 0.1, 0.1);
-				drawUnitCylinder(32);
-			glPopMatrix();
-			
-			setMaterial(darkGrey, 128.0);
-		
-			glRotatef(-70, 0.0, 0.0, 1.0);
-			glTranslatef(0.0, 0.15, 0.0);	
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();
-		glPopMatrix();
-		
-		// Dedo 3
-		setMaterial(darkGrey, 128.0);
-		
-		glPushMatrix();
-			glTranslatef(0.0, 0.0, 0.05);
-			glRotatef(fingerAng, 1.0, 0.0, 0.0);
-			glTranslatef(0.0, 0.15, 0.0);
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();	
-			
-			setMaterial(blueLightGrey, 96.0);
-		
-			glTranslatef(0.0, 0.15, 0.0);				
-			glPushMatrix();
-				glRotatef(90, 0.0, 0.0, 1.0);
-				glScalef(0.1, 0.1, 0.1);
-				drawUnitCylinder(32);
-			glPopMatrix();
-			
-			setMaterial(darkGrey, 128.0);
-		
-			glRotatef(-70, 1.0, 0.0, 0.0);
-			glTranslatef(0.0, 0.15, 0.0);	
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();
-		glPopMatrix();
-		
-		// Dedo 4
-		setMaterial(darkGrey, 128.0);
-		
-		glPushMatrix();
-			glTranslatef(0.05, 0.0, 0.0);
-			glRotatef(-fingerAng, 0.0, 0.0, 1.0);
-			glTranslatef(0.0, 0.15, 0.0);
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();	
-			
-			setMaterial(blueLightGrey, 96.0);
-					
-			glTranslatef(0.0, 0.15, 0.0);				
-			glPushMatrix();
-				glRotatef(90, 1.0, 0.0, 0.0);
-				glScalef(0.1, 0.1, 0.1);
-				drawUnitCylinder(32);
-			glPopMatrix();
-			
-			setMaterial(darkGrey, 128.0);	
-				
-			glRotatef(70, 0.0, 0.0, 1.0);
-			glTranslatef(0.0, 0.15, 0.0);	
-			glPushMatrix();
-				glScalef(0.05, 0.3, 0.05);
-				drawUnitCube();
-			glPopMatrix();
-		glPopMatrix();
+		// Dedos
+		drawFinger();
+		glRotatef(90, 0.0, 1.0, 0.0);
+		drawFinger();
+		glRotatef(90, 0.0, 1.0, 0.0);
+		drawFinger();
+		glRotatef(90, 0.0, 1.0, 0.0);
+		drawFinger();
 	glPopMatrix();
 }
 
+// Desenho de um cubo
 void drawCube(Cube* cube){
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();    	
@@ -684,9 +615,12 @@ void drawCube(Cube* cube){
      			}
       		}
       		if(!collision){
-      			if(cube->pos[1] > cube->size/2.0) cube->pos[1] -= 0.1;
-      			else if(cube->pos[1] < cube->size/2.0){
-      				cube->pos[1] = 0.1;
+      			if(cube->pos[1] > cube->size/2.0){
+      				cube->spd += 0.001;
+      				cube->pos[1] -= cube->spd;
+      			}
+      			else{
+      				cube->pos[1] = cube->size/2.0;
       				if(
       				cube->pos[0] > collectArea[0] &&
       				cube->pos[0] < collectArea[1] &&
@@ -698,6 +632,7 @@ void drawCube(Cube* cube){
  					}
  				}      			
       		}
+      		else cube->spd = 0.0;
       	}
 		glTranslatef(cube->pos[0], cube->pos[1], cube->pos[2]);
 		glRotatef(cube->rot[0], 1.0, 0.0, 0.0);
@@ -709,35 +644,31 @@ void drawCube(Cube* cube){
     glPopMatrix();
 }
 
+// Desenha o array de cubos. Aplicação do frustum
 void drawCubeArray(){
 	for(int i = 0; i < totalCube; i++){
 		if(cubeArray[i]->type != 0) {
 			// Analisando se o cubo esta dentro do campo de visao (frustum)
 			char code[6] = {'0','0','0','0','0','0'};
 			// Algoritmo Cohen-Sutherland
-			if(culling)
-				visible(cubeArray[i]->pos[0],cubeArray[i]->pos[1],cubeArray[i]->pos[2], 1.0, code);
-			
+			if(culling) visible(cubeArray[i]->pos[0],cubeArray[i]->pos[1],cubeArray[i]->pos[2], 1.0, code);			
 			// Se esta dentro do frustum, desenha.
-			if(code[0] != '1' && code[1] != '1' && code[2] != '1' && code[3] != '1' && code[4] != '1' && code[5] != '1') {
-				drawCube(cubeArray[i]);
-				printf("Cubo Desenhado!\n");
-			}else {
-				printf("Cubo Nao Desenhado!\n");
-			}
+			if(code[0] != '1' && code[1] != '1' && code[2] != '1' && code[3] != '1' && code[4] != '1' && code[5] != '1') drawCube(cubeArray[i]);
 		}
 	}
 }
 
+// Desenha uma esfera no ponto de captura de blocos
 void drawCatchSphere(){
 	glMatrixMode(GL_MODELVIEW);
-	setMaterial(red, 96.0);
+	setMaterial(red, 0.0);
 	glPushMatrix();
 		glTranslatef(catchPtCenter[12], catchPtCenter[13], catchPtCenter[14]);
 		glutSolidSphere(0.02*clawScale, 16, 16);
 	glPopMatrix();
 }
 
+// Recebe uma cor e a aplica a todos os materiais
 void setMaterial(GLfloat color[3], GLfloat shininess){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, ambLight(color));
@@ -746,6 +677,7 @@ void setMaterial(GLfloat color[3], GLfloat shininess){
 	glMaterialf(GL_FRONT, GL_SHININESS, shininess);
 }
 
+// Desenha um poste de teste
 void drawPost(GLfloat height){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();	
@@ -761,6 +693,7 @@ void drawPost(GLfloat height){
 	glPopMatrix();
 }
 
+// Desenha o conjunto de postes
 void drawPostGroup(){
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -774,43 +707,43 @@ void drawPostGroup(){
 	glPopMatrix();
 }
 
+// Desenha a caixa de coleta
 void drawCollectBox(){
 	glMatrixMode(GL_MODELVIEW);
-	setMaterial(yellow, 96.0);
+	setMaterial(yellow, 0.0);
 	glPushMatrix();
-		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[0]+collectArea[1])/2);
+		glTranslatef((collectArea[0]+collectArea[1])/2, 0.02, (collectArea[2]+collectArea[3])/2);
 		glPushMatrix();
 			glTranslatef(0.0, -0.01, 0.0);
-			glScalef(6.2, 0.2, 6.2);
-			glutSolidCube(0.1);
+			glScalef(collectArea[1] - collectArea[0] + 0.02, 0.02, collectArea[3] - collectArea[2] + 0.02);
+			glutSolidCube(1);
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(0.0, 0.2, 0.3);
-			glScalef(6.0, 4.0, 0.2);
-			glutSolidCube(0.1);
+			glScalef(collectArea[1] - collectArea[0], 0.4, 0.02);
+			glutSolidCube(1);
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(0.0, 0.2, -0.3);
-			glScalef(6.0, 4.0, 0.2);
-			glutSolidCube(0.1);
+			glScalef(collectArea[1] - collectArea[0], 0.4, 0.02);
+			glutSolidCube(1);
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(0.3, 0.2, 0.0);
-			glScalef(0.2, 4.0, 6.0);
-			glutSolidCube(0.1);
+			glScalef(0.02, 0.4, collectArea[3] - collectArea[2]);
+			glutSolidCube(1);
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(-0.3, 0.2, 0.0);
-			glScalef(0.2, 4.0, 6.0);
-			glutSolidCube(0.1);
+			glScalef(0.02, 0.4, collectArea[3] - collectArea[2]);
+			glutSolidCube(1);
 		glPopMatrix();
 	glPopMatrix();	
 }
 
-void display(){
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_MODELVIEW);
+// Atualiza e coleta certos pontos da garra. Entre eles, o ponto de captura
+void updateCatchPt(){
+	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     	glLoadIdentity();
     	glScalef(clawScale, clawScale, clawScale);
@@ -829,7 +762,7 @@ void display(){
 		glTranslatef(0.0, 0.1, 0.0);
 		glGetFloatv(GL_MODELVIEW_MATRIX, catchPtWrist);
 		glLightfv(GL_LIGHT3, GL_POSITION, light3Pos);
-		//glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
+		glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3Dir);
 
 		// Dedo 1
 		glPushMatrix();
@@ -849,9 +782,27 @@ void display(){
 			glRotatef(-70, 1.0, 0.0, 0.0);
 			glTranslatef(0.0, 0.3, 0.0);	
 			glGetFloatv(GL_MODELVIEW_MATRIX, catchPtEsq);
-		glPopMatrix();
-		for(int i = 0; i < 16; i++) catchPtCenter[i] = (catchPtDir[i]+catchPtEsq[i])/2.0;
+		glPopMatrix();    
+		for(int i = 0; i < 16; i++)
+			catchPtCenter[i] = (catchPtDir[i]+catchPtEsq[i])/2.0;
     glPopMatrix();
+}
+
+// Desenha a mira da garra
+void drawAim(){
+	glPushMatrix();
+		setMaterial(red, 0.0);
+		glTranslatef(catchPtCenter[12], 0.01, catchPtCenter[14]);
+		glScalef(0.2, 0.001, 0.2);
+		drawUnitCylinder(32);
+	glPopMatrix();
+}
+
+// Display
+void display(){
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	updateCatchPt();
     
     glPushMatrix();
 		glLoadIdentity();
@@ -868,6 +819,7 @@ void display(){
 		drawFloor();
 		drawWalls();
 		drawDAAAAACLAAAAAAAAAAW();
+		drawAim();
 		drawCubeArray();
 		drawCollectBox();
 		drawCatchSphere();
@@ -877,12 +829,14 @@ void display(){
     glutSwapBuffers();
 }
 
+// Reshape/Resize
 void reshape(int w, int h){
     glViewport(0,0,w,h);
+    aspect = (GLfloat)w/(GLfloat)h;
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(fovy, (float)w/h, zNear, zFar);
+    gluPerspective(fovy, aspect, zNear, zFar);
 }
 
 void idle(){
@@ -895,8 +849,9 @@ void idle(){
 		if(camRot[0] > 360.0) camRot[0] -= 360.0;
 	}
 	if(cubeLeft == 0){
-		totalCube += 2;
-		if(totalCube > maxCube){
+		totalCube += cubeIncrease;
+		maxLevel -= 1;
+		if(maxLevel == 0){
 			end = time(NULL);
 			printf("Tempo total:\n%.f segundos\n", difftime(end, start));
 			exit(0);
@@ -929,24 +884,24 @@ void keyInput(unsigned char key, int x, int y){
 	    break;
 	// SHOULDER
 	case 'r':
-	    if(shoulderAng < 160.0) shoulderAng += 4;
+	    if(shoulderAng < 140.0) shoulderAng += 4;
 	    break;
 	case 'f':
-	    if(shoulderAng > -160.0) shoulderAng -= 4;
+	    if(shoulderAng > -140.0) shoulderAng -= 4;
 	    break;
 	// ELBOW
 	case 't':
-	    if(elbowAng < 160.0) elbowAng += 4;
+	    if(elbowAng < 140.0) elbowAng += 4;
 	    break;
 	case 'g':
-	    if(elbowAng > -160.0) elbowAng -= 4;
+	    if(elbowAng > -140.0) elbowAng -= 4;
 	    break;
 	// WRIST
 	case 'y':
-	    if(wristAng < 160.0) wristAng += 4;
+	    if(wristAng < 140.0) wristAng += 4;
 	    break;
 	case 'h':
-	    if(wristAng > -160.0) wristAng -= 4;
+	    if(wristAng > -140.0) wristAng -= 4;
 	    break;
 	case 'u':
 	    wristRot += 4;
@@ -991,10 +946,10 @@ void keyInput(unsigned char key, int x, int y){
 		if(camRot[0] < -360.0) camRot[0] += 360.0;
 	    break;
 	case 'c':
-	    if(!autocam && camRot[1] < 90.0) camRot[1] += 5;
+	    if(!autocam && camRot[1] < 50.0) camRot[1] += 5;
 	    break;
 	case 'v':
-	    if(!autocam && camRot[1] > -90.0) camRot[1] -= 5;
+	    if(!autocam && camRot[1] > -50.0) camRot[1] -= 5;
 	    break;
 	case 'e':
 	    if(!autocam){
@@ -1091,24 +1046,27 @@ void keyInput(unsigned char key, int x, int y){
     	}
     	break;
     case '*':
-    	culling=true;
+    	if(culling) culling = false;
+    	else culling = true;
     	break;
     }    
 }
 
+// Configurações das luzes
 void lightConfig(){
 	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
 	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);	
 	glLightfv(GL_LIGHT2, GL_POSITION, light2Pos);	
-	//glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 200.0);
-	//glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 30.0);
+	glLightf(GL_LIGHT3, GL_SPOT_EXPONENT, 0.0);
+	glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 65.0);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light0Intensity);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light0Specular);
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1Intensity);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, light2Intensity);    
-	//glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);	
+	glLightfv(GL_LIGHT3, GL_DIFFUSE, light3Intensity);	
 }
 
+// Cria o array de cubos
 void createCubeArray(){
 	if(cubeArray != NULL) delete[] cubeArray;
 	cubeArray = new Cube*[totalCube];
@@ -1117,7 +1075,9 @@ void createCubeArray(){
     	cubeArray[i] = new Cube(0.2);
     	cubeArray[i]->pos[0] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
     	cubeArray[i]->pos[1] = 5.0 + (GLfloat)(rand()%6);
-    	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(18))/10.0 - (0.9);
+    	cubeArray[i]->pos[2] = (GLfloat)(rand()%(int)(12))/10.0 - (0.5);
+    	if(rand()%2 == 0) cubeArray[i]->pos[2] += 0.5;
+    	else cubeArray[i]->pos[2] -= 0.5;
     	cubeArray[i]->clr[0] = (GLfloat)(rand()%6)/10.0;
     	cubeArray[i]->clr[1] = (GLfloat)(rand()%6)/10.0;
     	cubeArray[i]->clr[2] = (GLfloat)(rand()%6)/10.0;
@@ -1129,6 +1089,7 @@ void createCubeArray(){
     }
 }
 
+// Cria espaço para capturar pontos da garra
 void createCatchPt(){
 	for (int i = 0; i < 16; i++){
     	catchPtDir[i] = 0;
@@ -1202,6 +1163,7 @@ GLuint loadBMP(const char * path)
 	return id; // Retornando o id para poder posteriormente usar a textura na hora de desenhar
 }
 
+// Comandos especiais de inicialização
 int init(int argc, char** argv){
 	if(argc > 1){
 		autorotation = true;
@@ -1257,6 +1219,7 @@ void visible(float x, float y, float z, float w, char code[6])
 	if(zc > wc) code[5] = '1'; // fora do plano far do frustum
 }
 
+// Main
 int main(int argc, char** argv){
 	srand(time(NULL));
 	createCubeArray();

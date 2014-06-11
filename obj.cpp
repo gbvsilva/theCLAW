@@ -10,6 +10,7 @@ Obj::Obj(){
 	clr[0] = 0;
 	clr[1] = 0;
 	clr[2] = 0;
+	spd = 0;
 	caught = false;
 }
 
