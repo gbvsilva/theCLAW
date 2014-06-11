@@ -2,13 +2,10 @@
 # theCLAW
 
 ## Instruções
-![edClaw](/edClaw.jpg)
 
 O seu objeto é levar todos os blocos à caixa amarela o mais rápido possível. Elas virão em 5 ondas, com uma quantidade crescente de caixas. No final, você terá o seu tempo de término.
 
 ### Controles
-![typical Emacs User](/typicalEmacsUser.jpg)
-
 - Pegar/Soltar objeto: Barra de Espaço.
   - Também é possível soltar um objeto abrindo a garra. 
 - Rotacionar o braço: A e S.
